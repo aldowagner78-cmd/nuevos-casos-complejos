@@ -1,0 +1,40 @@
+﻿# Koyeb Deployment Configuration
+app:
+  name: casos-complejos
+
+services:
+  - name: web
+    type: web
+    instance_type: nano
+    regions:
+      - was
+    ports:
+      - port: 8000
+        protocol: http
+    env:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "8000"
+      - key: DATABASE_URL
+        value: postgresql://postgres.kzlkjsiqlyvxmhktrole:26716975@aws-0-us-east-2.pooler.supabase.com:5432/postgres
+      - key: CLOUDINARY_CLOUD_NAME
+        value: de1bkacfr
+      - key: CLOUDINARY_API_KEY
+        value: "884192681519569"
+      - key: CLOUDINARY_API_SECRET
+        value: -aYhGyqH1T79mz11xQO3QblIync
+      - key: SESSION_SECRET
+        value: kj23h4kjh23k4jh23k4jh234kl5jh6lkjh7lk8jh9l0k
+    build:
+      type: buildpack
+      buildCommand: npm install
+    run:
+      command: node backend/server.js
+    health_checks:
+      - path: /
+        port: 8000
+        initial_delay: 30
+    autoscaling:
+      min: 1
+      max: 1

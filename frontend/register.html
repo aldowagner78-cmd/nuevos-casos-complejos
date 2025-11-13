@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro - Gestión Pacientes</title>
+    <link rel="icon" type="image/png" href="/Logo.png">
+    <link rel="shortcut icon" type="image/png" href="/Logo.png">
+    <link rel="apple-touch-icon" href="/Logo.png">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="login-container">
+        <h2>Registrar Nuevo Usuario</h2>
+        <form id="form-register">
+            <div id="register-message" class="message-area" style="display:none;"></div>
+            <div class="form-group">
+                <label for="usuario">Nuevo Usuario</label>
+                <input type="text" id="usuario" name="usuario" required>
+            </div>
+            <div class="form-group">
+                <label for="contrasena">Contraseña</label>
+                <input type="password" id="contrasena" name="contrasena" required>
+            </div>
+            <div class="form-group">
+                <label for="contrasena2">Confirmar Contraseña</label>
+                <input type="password" id="contrasena2" name="contrasena2" required>
+            </div>
+            <div class="form-group">
+                <label for="codigo_registro">Código de Registro</label>
+                <input type="password" id="codigo_registro" name="codigo_registro" required>
+                <small>Solicite este código a un administrador.</small>
+            </div>
+            <button type="submit">Registrarse</button>
+            <div id="alerta-register" class="alerta" style="display: none;"></div>
+        </form>
+        <div class="login-footer">
+            <p>¿Ya tienes cuenta? <a href="/login.html">Inicia sesión aquí</a></p>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('form-register').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const usuario = document.getElementById('usuario').value;
+            const contrasena = document.getElementById('contrasena').value;
+            const contrasena2 = document.getElementById('contrasena2').value;
+            const codigo_registro = document.getElementById('codigo_registro').value;
+            const messageEl = document.getElementById('register-message');
+            messageEl.style.display = 'none';
+
+            if (contrasena !== contrasena2) {
+                messageEl.textContent = 'Las contraseñas no coinciden.';
+                messageEl.className = 'message-area error';
+                messageEl.style.display = 'block';
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ usuario, contrasena, codigo_registro })
+                });
+                const data = await response.json();
+
+                if (response.ok) {
+                    messageEl.textContent = '¡Registro exitoso! Redirigiendo al panel...';
+                    messageEl.className = 'message-area success'; // Clase para estilo verde
+                    messageEl.style.display = 'block';
+                    // Desactivar el botón para evitar doble envío
+                    document.getElementById('form-register').querySelector('button[type="submit"]').disabled = true;
+                    // Redirigir a la app principal después de 2 segundos
+                    setTimeout(() => {
+                        window.location.href = '/index.html'; // O simplemente '/'
+                    }, 2000);
+                } else {
+                    throw new Error(data.error || 'Error desconocido');
+                }
+            } catch (error) {
+                messageEl.textContent = error.message;
+                messageEl.className = 'message-area error';
+                messageEl.style.display = 'block';
+            }
+        });
+    </script>
+
+</body>
+</html>

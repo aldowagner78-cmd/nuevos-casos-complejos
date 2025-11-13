@@ -1,0 +1,30 @@
+{
+  "name": "gestion-pacientes",
+  "version": "2.0.0",
+  "description": "Sistema de gestión de pacientes - Casos Complejos",
+  "main": "backend/server.js",
+  "scripts": {
+    "start": "node backend/server.js",
+    "setup": "node backend/setupDatabase.js",
+    "dev": "node backend/server.js"
+  },
+  "keywords": ["pacientes", "gestion", "casos-complejos"],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "cloudinary": "^2.0.0",
+    "csv-parser": "^3.2.0",
+    "dotenv": "^16.0.0",
+    "express": "^5.1.0",
+    "express-session": "^1.18.2",
+    "json2csv": "^6.0.0-alpha.2",
+    "mammoth": "^1.11.0",
+    "multer": "^2.0.2",
+    "open": "^10.2.0",
+    "pdf-lib": "^1.17.1",
+    "pg": "^8.11.0",
+    "sharp": "^0.34.4"
+  }
+}

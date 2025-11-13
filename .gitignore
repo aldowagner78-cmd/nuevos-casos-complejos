@@ -1,0 +1,31 @@
+# Node modules
+node_modules/
+
+# Environment variables
+.env
+.env.local
+
+# Backups
+*.backup
+
+# Database
+data/
+*.db
+*.sqlite
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Old credentials (not needed anymore)
+backend/credentials.json
+backend/token.json
+backend/service-account-drive.json
+backend/server.key
+backend/server.cert
+
+# Development scripts
+backend/convert_to_postgresql.py

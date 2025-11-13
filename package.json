@@ -1,14 +1,17 @@
 {
   "name": "gestion-pacientes",
   "version": "2.0.0",
-  "description": "Sistema de gestión de pacientes - Casos Complejos",
+  "description": "Sistema de gestion de pacientes - Casos Complejos",
   "main": "backend/server.js",
   "scripts": {
     "start": "node backend/server.js",
-    "setup": "node backend/setupDatabase.js",
     "dev": "node backend/server.js"
   },
-  "keywords": ["pacientes", "gestion", "casos-complejos"],
+  "keywords": [
+    "pacientes",
+    "gestion",
+    "casos-complejos"
+  ],
   "author": "",
   "license": "ISC",
   "type": "commonjs",

@@ -103,7 +103,7 @@ app.use(session({
 // --- Conexión a Base de Datos ---
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.DATABASE_URL $1 { rejectUnauthorized: false } : false
+  ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false
 });
 
 pool.connect()

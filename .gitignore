@@ -1,0 +1,52 @@
+
+# Node modules
+node_modules/
+
+# Archivos de entorno y credenciales
+.env
+.env.*
+token.json
+service-account-drive.json
+credentials.json
+
+# Base de datos y archivos temporales
+data/pacientes.db
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+*.sqlite
+*.csv~
+
+# Archivos subidos por usuarios
+uploads/
+!uploads/.gitkeep
+
+# Logs
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDEs y SO
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Otros temporales y backups
+*.tmp
+*.temp
+*.bak
+*.backup
+*~
+
+# Build y coverage
+build/
+coverage/
+.nyc_output/
+
+# Server local de pruebas (NO subir nunca)
+backend/server_local.js

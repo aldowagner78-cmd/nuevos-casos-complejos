@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Pacientes - Casos Complejos</title>
+    <link rel="icon" type="image/png" href="/Logo.png">
+    <link rel="shortcut icon" type="image/png" href="/Logo.png">
+    <link rel="apple-touch-icon" href="/Logo.png">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- Modal de Aviso (éxito/error) -->
+    <div class="modal-backdrop" id="modal-aviso">
+        <div class="modal-content">
+            <h2 id="titulo-modal-aviso">Aviso</h2>
+            <p id="texto-modal-aviso">Mensaje de aviso</p>
+            <div class="modal-botones-container">
+                <button type="button" id="btn-modal-aviso-aceptar" class="boton-cancelar">Volver</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-backdrop" id="modal-cambiar-pass">
+        <div class="modal-content">
+            <h2>Cambio de Contraseña Obligatorio</h2>
+            <p>Detectamos que estás usando una contraseña temporal. Por favor, crea una nueva contraseña.</p>
+            <form id="form-cambiar-pass">
+                <div class="form-group">
+                    <label for="nueva-contrasena">Nueva Contraseña</label>
+                    <input type="password" id="nueva-contrasena" name="nueva-contrasena" required>
+                </div>
+                <div class="form-group">
+                    <label for="nueva-contrasena2">Confirmar Nueva Contraseña</label>
+                    <input type="password" id="nueva-contrasena2" name="nueva-contrasena2" required>
+                </div>
+                <button type="submit">Guardar Nueva Contraseña</button>
+                <div id="alerta-cambiar-pass" class="alerta" style="display: none;"></div>
+            </form>
+        </div>
+    </div>
+
+            <div class="modal-backdrop" id="modal-confirmar-edicion">
+        <div class="modal-content">
+            <h2>Confirmar Cambios</h2>
+            <p>¿Está seguro de que desea sobrescribir los datos de este paciente? Esta acción no se puede deshacer.</p>
+            <div class="modal-botones-container">
+                <button type="button" id="btn-confirmar-edicion-cancelar" class="boton-cancelar">Cancelar</button>
+                <button type="button" id="btn-confirmar-edicion-aceptar" class="boton-aceptar">Aceptar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Confirmar Eliminación Paciente -->
+    <div class="modal-backdrop" id="modal-confirmar-eliminar">
+        <div class="modal-content">
+            <h2 id="titulo-modal-eliminar">Confirmar Acción</h2>
+            <p id="texto-modal-eliminar">¿Está seguro de que desea realizar esta acción?</p>
+            <div class="modal-botones-container">
+                <button type="button" id="btn-confirmar-eliminar-cancelar" class="boton-cancelar">Cancelar</button>
+                <button type="button" id="btn-confirmar-eliminar-aceptar" class="boton-aceptar">Aceptar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="navbar">
+        <h1>Gestión de Pacientes - Casos Complejos</h1>
+        <div id="navbar-controls">
+            <div id="theme-switcher">
+                <button class="theme-btn" id="theme-corporate" data-theme="theme-corporate" title="Tema Corporativo (Azul)"></button>
+                <button class="theme-btn" id="theme-minimalist" data-theme="theme-minimalist" title="Tema Minimalista (Verde)"></button>
+                <button class="theme-btn" id="theme-dark" data-theme="theme-dark" title="Tema Oscuro"></button>
+            </div>
+            <div style="display:inline-flex;align-items:center;gap:2px;">
+                <button id="navbar-user-btn" title="Usuario" tabindex="0" aria-label="Usuario">
+                    <!-- Icono usuario clásico (hombrecito) -->
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#1976d2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="8" r="4" />
+                        <path d="M4 20c0-4 4-6 8-6s8 2 8 6" />
+                    </svg>
+                </button>
+                <span id="navbar-user" style="font-weight:500;min-width:60px;">Cargando...</span>
+                <button id="btn-logout-icon" title="Cerrar sesión" tabindex="0" aria-label="Cerrar sesión">
+                    <!-- Icono logout clásico (puerta con flecha) -->
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#e53935" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                        <polyline points="16 17 21 12 16 7" />
+                        <line x1="21" y1="12" x2="9" y2="12" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="app-container">
+    <div class="container" id="app-main-container">
+        
+    <details class="panel" id="panel-busqueda-avanzada">
+            <summary><h4><span role="img" aria-label="Avanzado">🔍</span> Búsqueda Avanzada</h4></summary>
+            <div class="panel-content">
+                <div class="busqueda-avanzada-container">
+                    <!-- Columna izquierda: Filtros y botones -->
+                    <div class="busqueda-avanzada-filtros">
+                        <form id="form-busqueda-avanzada">
+                            <div class="form-group">
+                                <label for="adv-afiliado">Afiliado</label>
+                                <input type="text" id="adv-afiliado" name="afiliado" placeholder="(Cualquiera)" autocomplete="off" maxlength="100">
+                                <small class="tooltip-text">Puede buscar por apellido completo o DNI. Ejemplo: 'Martinez' o '12345678'</small>
+                            </div>
+                            <div class="form-group">
+                                <label for="adv-localidad">Localidad</label>
+                                <input type="text" id="adv-localidad" name="localidad" list="localidades-list" placeholder="(Cualquiera)" autocomplete="off" maxlength="100">
+                                <datalist id="localidades-list"></datalist>
+                                <small class="tooltip-text">Filtra pacientes por localidad de residencia</small>
+                            </div>
+                            <div class="form-group">
+                                <label for="adv-condicion">Condición</label>
+                                <select id="adv-condicion" name="condicion" class="select-sin-flecha">
+                                    <option value="">(Cualquiera)</option>
+                                    <option value="RESIDENTE">RESIDENTE</option>
+                                    <option value="DERIVADO">DERIVADO</option>
+                                    <option value="TRANSITO">TRANSITO</option>
+                                </select>
+                                <small class="tooltip-text">Seleccione la condición del paciente</small>
+                            </div>
+                            <div class="form-group">
+                                <label for="adv-tipo-afiliado">Tipo de Afiliado</label>
+                                <select id="adv-tipo-afiliado" name="tipo_afiliado" class="select-sin-flecha">
+                                    <option value="">(Cualquiera)</option>
+                                    <option value="Titular">Titular</option>
+                                    <option value="Adherente">Adherente</option>
+                                </select>
+                                <small class="tooltip-text">Seleccione si el paciente es Titular o Adherente</small>
+                            </div>
+                            <div class="form-group">
+                                <label for="adv-prestador">Prestador</label>
+                                <input type="text" id="adv-prestador" name="prestador" list="prestadores-list" placeholder="(Cualquiera)" autocomplete="off" maxlength="100">
+                                <datalist id="prestadores-list"></datalist>
+                                <small class="tooltip-text">Filtra por el efector donde se realizó la prestación</small>
+                            </div>
+                            <div class="form-group">
+                                <label for="adv-anio">Año de Prestación</label>
+                                <input type="number" id="adv-anio" name="anio" list="anios-list" placeholder="(Cualquiera)" min="2000" max="2030" autocomplete="off">
+                                <datalist id="anios-list"></datalist>
+                                <small class="tooltip-text">Filtra por el año en que se realizó la prestación</small>
+                            </div>
+                            <div class="form-actions">
+                                <button type="reset" id="btn-limpiar-busqueda-avanzada" class="btn-secondary">Limpiar Filtros</button>
+                                <button type="submit" id="btn-busqueda-avanzada" class="btn-primary">Buscar</button>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <!-- Columna derecha: Resultados -->
+                    <div class="busqueda-avanzada-resultados">
+                        <div id="listado-resultados-avanzada"></div>
+                    </div>
+                </div>
+            </div>
+        </details>
+        <div class="panel" id="panel-busqueda">
+            <div class="auditor-col" id="auditor-col-left">
+                <h2>Buscar Paciente</h2>
+                <div id="search-form">
+                    <div class="form-group search-inline">
+                        <label for="search-query">Buscar</label>
+                        <input type="text" id="search-query" name="search-query" placeholder="Buscar por DNI o Apellido y Nombre...">
+                        <button id="btn-buscar" type="button" title="Ejecutar búsqueda">
+                            <span role="img" aria-label="Buscar">🔎</span>
+                        </button>
+                        <button id="btn-limpiar-busqueda" type="button" title="Limpiar búsqueda">
+                            <span role="img" aria-label="Limpiar">🧹</span>
+                        </button>
+                    </div>
+                </div>
+                <div id="info-busqueda-dni">Si busca por DNI, haga clic en el botón <b>Buscar</b> (lupa) o presione <b>Enter</b> luego de escribir o pegar el documento completo.</div>
+                
+                <div id="listado-resultados"></div>
+                <div id="info-paciente"></div>
+            </div>
+            
+            <div class="auditor-col" id="auditor-col-right">
+                <div id="lista-prestaciones"></div>
+            </div>
+        </div>
+
+        <div class="panel" id="panel-carga">
+            <h2>Cargar/Editar Datos</h2>
+            <details class="sub-details" >
+                <summary><h4>Cargar Nuevo Paciente</h4></summary>
+                <div class="sub-details-content">
+                    <form id="form-nuevo-paciente">
+                            <div class="form-group">
+                                <label for="new-dni">DNI</label>
+                                <input type="text" id="new-dni" name="dni" autocomplete="off">
+                            </div>
+                            <div class="form-group">
+                                <label for="new-nombre">Apellido y Nombre</label>
+                                <input type="text" id="new-nombre" name="nombre" autocomplete="off">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="new-sexo">Sexo</label>
+                                <select id="new-sexo" name="sexo" autocomplete="off">
+                                    <option value="" selected disabled>Seleccione sexo</option>
+                                    <option value="Femenino">Femenino</option>
+                                    <option value="Masculino">Masculino</option>
+                                    <option value="Otro">Otro</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Fecha de Nacimiento</label>
+                                <div class="date-manual-inputs" id="new-fecha-nacimiento-inputs">
+                                    <input type="number" id="new-fecha-dia" name="fecha_dia" min="1" max="31" placeholder="Día" autocomplete="off" style="width: 60px; display: inline-block; margin-right: 4px;">
+                                    <input type="number" id="new-fecha-mes" name="fecha_mes" min="1" max="12" placeholder="Mes" autocomplete="off" style="width: 60px; display: inline-block; margin-right: 4px;">
+                                    <input type="number" id="new-fecha-anio" name="fecha_anio" min="1920" max="2100" placeholder="Año" autocomplete="off" style="width: 80px; display: inline-block;">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="new-condicion">Condición</label>
+                                <select id="new-condicion" name="condicion" autocomplete="off">
+                                    <option value="" selected disabled>Seleccione condición</option>
+                                    <option value="RESIDENTE">RESIDENTE</option>
+                                    <option value="DERIVADO">DERIVADO</option>
+                                    <option value="TRANSITO">TRANSITO</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="new-telefono">Teléfono</label>
+                                <input type="text" id="new-telefono" name="telefono" placeholder="" autocomplete="off">
+                            </div>
+                            <div class="form-group">
+                                <label for="new-direccion">Dirección</label>
+                                <input type="text" id="new-direccion" name="direccion" placeholder="" autocomplete="off">
+                            </div>
+                            <div class="form-group">
+                                <label for="new-localidad">Localidad</label>
+                                <input type="text" id="new-localidad" name="localidad" list="localidades-list" placeholder="" autocomplete="off">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="new-tipo-afiliado">Tipo de Afiliado</label>
+                                <select id="new-tipo-afiliado" name="tipo_afiliado" autocomplete="off">
+                                    <option value="" selected disabled>Seleccione tipo de afiliado</option>
+                                    <option value="Titular">Titular</option>
+                                    <option value="Adherente">Adherente</option>
+                                </select>
+                            </div>
+
+
+                            <div class="form-group" id="grupo-parentesco-nuevo">
+                                <label for="new-vinculo-titular">Parentesco</label>
+                                <select id="new-vinculo-titular" name="vinculo_titular" autocomplete="off">
+                                    <option value="" selected disabled>Seleccione parentesco</option>
+                                    <option value="Hijo/a">Hijo/a</option>
+                                    <option value="Nieto/a">Nieto/a</option>
+                                    <option value="Cónyuge">Cónyuge</option>
+                                    <option value="Esposo/a">Esposo/a</option>
+                                    <option value="Otro">Otro (especificar)</option>
+                                </select>
+                                <input type="text" id="new-vinculo-otro" name="vinculo_titular_otro" placeholder="Especificar parentesco" style="display:none; margin-top:8px;" autocomplete="off" />
+                            </div>
+
+                            <div class="form-group" id="grupo-titular-nombre-nuevo">
+                                <label for="new-titular-nombre">Nombre y Apellido Titular</label>
+                                <input type="text" id="new-titular-nombre" name="titular_nombre" placeholder="Apellido y Nombre del titular" autocomplete="off">
+                            </div>
+                            <div class="form-group" id="grupo-titular-dni-nuevo">
+                                <label for="new-titular-dni">DNI Titular</label>
+                                <input type="text" id="new-titular-dni" name="titular_dni" placeholder="DNI del afiliado titular" autocomplete="off">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="new-observaciones">Observaciones</label>
+                                <textarea id="new-observaciones" name="observaciones" rows="3" placeholder="Observaciones adicionales" autocomplete="off"></textarea>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Adjuntar archivos (máximo 5)</label>
+                                <div id="campos-archivos-adjuntos">
+                                    <!-- Los campos se agregarán dinámicamente con archivosPaciente.js -->
+                                </div>
+                            </div>
+
+                            <button type="submit" id="btn-guardar-paciente">Guardar Paciente</button>
+                            <div id="alerta-paciente" class="alerta"></div>
+                        </form>
+                </div>
+            </details>
+            <details class="sub-details">
+                <summary><h4>Cargar Nueva Prestación</h4></summary>
+                <div class="sub-details-content">
+                    <form id="form-nueva-prestacion">
+                        <div class="form-group">
+                            <label for="prest-dni">DNI del Paciente</label>
+                            <input type="text" id="prest-dni" name="prest-dni" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Fecha</label>
+                            <div class="date-picker-container">
+                                <div class="date-manual-inputs" id="prest-fecha-inputs">
+                                    <input type="number" id="prest-fecha-dia" name="prest_fecha_dia" min="1" max="31" placeholder="Día" required autocomplete="off" style="width: 60px; display: inline-block; margin-right: 4px;">
+                                    <input type="number" id="prest-fecha-mes" name="prest_fecha_mes" min="1" max="12" placeholder="Mes" required autocomplete="off" style="width: 60px; display: inline-block; margin-right: 4px;">
+                                    <input type="number" id="prest-fecha-anio" name="prest_fecha_anio" min="1920" max="2100" placeholder="Año" required autocomplete="off" style="width: 80px; display: inline-block; margin-right: 0;">
+                                    <button type="button" id="btn-calendar-picker" class="btn-calendar-icon" title="Seleccionar fecha" style="position:absolute; right:6px; top:50%; transform:translateY(-50%); background:transparent; border:none; cursor:pointer; padding:0;">
+                                        📅
+                                    </button>
+                                </div>
+                                <div id="calendar-dropdown" class="calendar-dropdown" style="display: none;">
+                                    <div class="calendar-header">
+                                        <button type="button" class="calendar-nav" id="calendar-prev-month">&lt;</button>
+                                        <span id="calendar-month-year"></span>
+                                        <button type="button" class="calendar-nav" id="calendar-next-month">&gt;</button>
+                                    </div>
+                                    <div class="calendar-weekdays">
+                                        <span>Do</span><span>Lu</span><span>Ma</span><span>Mi</span><span>Ju</span><span>Vi</span><span>Sa</span>
+                                    </div>
+                                    <div id="calendar-days" class="calendar-days"></div>
+                                    <div class="calendar-footer">
+                                        <button type="button" id="btn-today" class="btn-today">Hoy</button>
+                                        <button type="button" id="btn-close-calendar" class="btn-close-calendar">Cerrar</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="prest-prestador">Prestador</label>
+                            <div class="combo-prestador" style="position:relative;">
+                                <input type="text" id="prest-prestador" name="prest-prestador" autocomplete="off" class="combo-prestador-input">
+                                <button type="button" tabindex="-1" class="combo-prestador-btn" aria-label="Mostrar opciones" style="position:absolute; right:6px; top:50%; transform:translateY(-50%); background:transparent; border:none; cursor:pointer; padding:0;">
+                                    <svg width="18" height="18" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z" fill="#666"/></svg>
+                                </button>
+                                <ul class="combo-prestador-list" style="display:none; position:absolute; left:0; right:0; top:110%; z-index:10; background:#fff; border:1px solid #ccc; border-radius:0 0 8px 8px; max-height:180px; overflow-y:auto; box-shadow:0 2px 8px rgba(0,0,0,0.08); margin:0; padding:0; list-style:none;"></ul>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Prestaciones</label>
+                            <div id="prestaciones-container">
+                                <div class="prestacion-input-group">
+                                    <input type="text" name="prestacion[]" class="prestacion-input" placeholder="Ingrese prestación">
+                                    <button type="button" class="btn-remove-prestacion" title="Quitar">&times;</button>
+                                </div>
+                            </div>
+                            <button type="button" id="btn-anadir-prestacion" class="btn-add-linea">+ Añadir prestación</button>
+                        </div>
+                        <button type="submit" id="btn-guardar-prestacion">Guardar Prestación</button>
+                        <div id="alerta-prestacion" class="alerta" style="display: none;"></div>
+                    </form>
+                </div>
+            </details>
+            <details class="sub-details" id="panel-editar-paciente">
+                <summary><h4>Editar Paciente</h4></summary>
+                <div class="sub-details-content">
+                    <div id="editar-busqueda-container">
+                            <div class="editar-busqueda-row">
+                                <input type="text" id="input-buscar-editar" name="input-buscar-editar" placeholder="Buscar por DNI o Apellido y Nombre..." />
+                                <button id="btn-limpiar-busqueda-editar" type="button" title="Limpiar búsqueda">
+                                    <span role="img" aria-label="Limpiar">🧹</span>
+                                </button>
+                            </div>
+                            <div id="info-busqueda-dni-editar">Si busca por DNI, debe presionar <b>Enter</b> luego de escribir o pegar el número completo.</div>
+                        <ul id="listado-pacientes-editar" class="listado-pacientes"></ul>
+                        <div id="form-editar-paciente-container"></div>
+                    <!-- Bloque de selects de fecha para edición, idéntico a los otros formularios -->
+                    <template id="tpl-edit-fecha-nacimiento-dropdowns">
+                        <div class="date-dropdowns" id="edit-fecha-nacimiento-dropdowns">
+                            <select id="edit-fecha-dia" name="fecha_dia" class="date-select-day" required>
+                                <option value="" selected disabled hidden>Día</option>
+                            </select>
+                            <select id="edit-fecha-mes" name="fecha_mes" class="date-select-month" required>
+                                <option value="" selected disabled hidden>Mes</option>
+                            </select>
+                            <select id="edit-fecha-anio" name="fecha_anio" class="date-select-year" required>
+                                <option value="" selected disabled hidden>Año</option>
+                            </select>
+                        </div>
+                    </template>
+                    </div>
+                </div>
+            </details>
+        </div>
+
+        <details id="details-admin">
+            <summary>
+                <h3>⚙️ Administración</h3>
+            </summary>
+            <div class="details-content">
+                <h2>Administración del Sistema</h2>
+                
+                <p>Los códigos de registro fijos para nuevos usuarios son:</p>
+                <div class="code-display-container">
+                    <div class="code-display-item">
+                        <strong>ADMINISTRATIVO:</strong>
+                        <span>ADMIN123</span>
+                    </div>
+                    <div class="code-display-item">
+                        <strong>AUDITOR:</strong>
+                        <span>AUDITOR123</span>
+                    </div>
+                </div>
+                <small>Guarde y comparta estos códigos de forma segura.</small>
+
+                <div id="panel-admin-usuarios">
+                    <h3>Gestionar Usuarios</h3>
+                    <div id="lista-usuarios-admin">
+                        </div>
+                </div>
+            </div>
+        </details>
+    </div>
+
+    <script>
+        // Cache buster automático
+        const v = Date.now();
+        document.write(`<script src="app.js?v=${v}"><\/script>`);
+        document.write(`<script src="archivosPaciente.js?v=${v}"><\/script>`);
+    </script>
+
+    </div> <!-- Cierre de app-main-container -->
+    </div> <!-- Cierre de app-container -->
+
+    <!-- Datalist para autocompletar localidades -->
+    <datalist id="localidades-list"></datalist>
+
+</body>
+</html>

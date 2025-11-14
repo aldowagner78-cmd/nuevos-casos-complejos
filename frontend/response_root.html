@@ -1,0 +1,236 @@
+    <!-- Modal de Aviso (éxito/error) -->
+    <div class="modal-backdrop" id="modal-aviso">
+        <div class="modal-content">
+            <h2 id="titulo-modal-aviso">Aviso</h2>
+            <p id="texto-modal-aviso">Mensaje de aviso</p>
+            <div class="modal-botones-container">
+                <button type="button" id="btn-modal-aviso-aceptar" class="boton-aceptar">Aceptar</button>
+            </div>
+        </div>
+    </div>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Pacientes - Casos Complejos</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="modal-backdrop" id="modal-cambiar-pass">
+        <div class="modal-content">
+            <h2>Cambio de Contraseña Obligatorio</h2>
+            <p>Detectamos que estás usando una contraseña temporal. Por favor, crea una nueva contraseña.</p>
+            <form id="form-cambiar-pass">
+                <div class="form-group">
+                    <label for="nueva-contrasena">Nueva Contraseña</label>
+                    <input type="password" id="nueva-contrasena" required>
+                </div>
+                <div class="form-group">
+                    <label for="nueva-contrasena2">Confirmar Nueva Contraseña</label>
+                    <input type="password" id="nueva-contrasena2" required>
+                </div>
+                <button type="submit">Guardar Nueva Contraseña</button>
+                <div id="alerta-cambiar-pass" class="alerta" style="display: none;"></div>
+            </form>
+        </div>
+    </div>
+
+            <div class="modal-backdrop" id="modal-confirmar-edicion">
+        <div class="modal-content">
+            <h2>Confirmar Cambios</h2>
+            <p>¿Está seguro de que desea sobrescribir los datos de este paciente? Esta acción no se puede deshacer.</p>
+            <div class="modal-botones-container">
+                <button type="button" id="btn-confirmar-edicion-cancelar" class="boton-cancelar">Cancelar</button>
+                <button type="button" id="btn-confirmar-edicion-aceptar" class="boton-aceptar">Aceptar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Confirmar Eliminación Paciente -->
+    <div class="modal-backdrop" id="modal-confirmar-eliminar">
+        <div class="modal-content">
+            <h2 id="titulo-modal-eliminar">Confirmar Acción</h2>
+            <p id="texto-modal-eliminar">¿Está seguro de que desea realizar esta acción?</p>
+            <div class="modal-botones-container">
+                <button type="button" id="btn-confirmar-eliminar-cancelar" class="boton-cancelar">Cancelar</button>
+                <button type="button" id="btn-confirmar-eliminar-aceptar" class="boton-aceptar">Aceptar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="navbar">
+        <h1>Gestión de Pacientes - Casos Complejos</h1>
+        <div id="navbar-controls">
+            <div id="theme-switcher">
+                <button class="theme-btn" id="theme-corporate" data-theme="theme-corporate" title="Tema Corporativo (Azul)"></button>
+                <button class="theme-btn" id="theme-minimalist" data-theme="theme-minimalist" title="Tema Minimalista (Verde)"></button>
+                <button class="theme-btn" id="theme-dark" data-theme="theme-dark" title="Tema Oscuro"></button>
+            </div>
+            <div>
+                <span id="navbar-user">Usuario: Cargando...</span>
+                <button id="btn-logout">Cerrar Sesión</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container" id="app-container">
+        
+        <div class="panel" id="panel-busqueda">
+            <h2>Buscar Paciente</h2>
+            <div id="search-form">
+                <div class="form-group search-inline">
+                    <label for="search-query">Buscar</label>
+                    <input type="text" id="search-query" name="search-query" placeholder="Buscar por DNI o Apellido y Nombre...">
+                    <button id="btn-limpiar-busqueda" type="button" title="Limpiar búsqueda">
+                        <span role="img" aria-label="Limpiar">🧹</span>
+                    </button>
+                </div>
+            </div>
+            <!-- Texto informativo: se muestra EN BLOQUE debajo del campo de búsqueda y del botón limpiar -->
+            <div id="info-busqueda-dni">Si busca por DNI, debe presionar <b>Enter</b> luego de escribir o pegar el número completo.</div>
+
+            <div class="results-area" id="area-resultados">
+                <h3>Resultados</h3>
+                <div id="listado-resultados"></div>
+                <div id="info-paciente"></div>
+                <div id="lista-prestaciones"></div>
+            </div>
+        </div>
+
+        <div class="panel" id="panel-carga">
+            <h2>Cargar/Editar Datos</h2>
+            <details class="sub-details" >
+                <summary><h4>Cargar Nuevo Paciente</h4></summary>
+                <div class="sub-details-content">
+                    <form id="form-nuevo-paciente">
+                        <!-- ...campos de nuevo paciente... -->
+                        <div class="form-group">
+                            <label for="new-dni">DNI</label>
+                            <input type="text" id="new-dni" name="dni" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="new-nombre">Apellido y Nombre</label>
+                            <input type="text" id="new-nombre" name="nombre" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="new-condicion">Condición</label>
+                            <select id="new-condicion" name="condicion">
+                                <option value="RESIDENTE">RESIDENTE</option>
+                                <option value="DERIVADO">DERIVADO</option>
+                                <option value="TRANSITO">TRANSITO</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="new-telefono">Teléfono</label>
+                            <input type="text" id="new-telefono" name="telefono" placeholder="">
+                        </div>
+                        <div class="form-group">
+                            <label for="new-direccion">Dirección</label>
+                            <input type="text" id="new-direccion" name="direccion" placeholder="">
+                        </div>
+                        <div class="form-group">
+                            <label for="new-localidad">Localidad</label>
+                            <input type="text" id="new-localidad" name="localidad" placeholder="">
+                        </div>
+                        <div class="form-group">
+                            <label for="new-fecha-nacimiento">Fecha de Nacimiento</label>
+                            <input type="date" id="new-fecha-nacimiento" name="fecha_nacimiento">
+                        </div>
+                        <div class="form-group">
+                            <label for="new-tipo-afiliado">Tipo de Afiliado</label>
+                            <select id="new-tipo-afiliado" name="tipo_afiliado">
+                                <option value="Titular">Titular</option>
+                                <option value="Adherente">Adherente</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="new-ficha-file">Opción 1: Adjuntar Ficha</label>
+                            <input type="file" id="new-ficha-file" name="new-ficha-file">
+                        </div>
+                        <div class="form-group">
+                            <label for="new-ficha-text">Opción 2: Pegar Link Ficha</label>
+                            <input type="text" id="new-ficha-text" name="ficha_url_text">
+                        </div>
+                        <button type="submit" id="btn-guardar-paciente">Guardar Paciente</button>
+                        <div id="alerta-paciente" class="alerta"></div>
+                    </form>
+                </div>
+            </details>
+            <details class="sub-details">
+                <summary><h4>Cargar Nueva Prestación</h4></summary>
+                <div class="sub-details-content">
+                    <form id="form-nueva-prestacion">
+                        <div class="form-group">
+                            <label for="prest-dni">DNI del Paciente</label>
+                            <input type="text" id="prest-dni" name="prest-dni" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="prest-fecha">Fecha</label>
+                            <input type="date" id="prest-fecha" name="prest-fecha" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="prest-prestador">Prestador</label>
+                            <input type="text" id="prest-prestador" name="prest-prestador">
+                        </div>
+                        <div class="form-group">
+                            <label for="prest-prestacion">Prestación</label>
+                            <input type="text" id="prest-prestacion" name="prest-prestacion">
+                        </div>
+                        <button type="submit" id="btn-guardar-prestacion">Guardar Prestación</button>
+                        <div id="alerta-prestacion" class="alerta" style="display: none;"></div>
+                    </form>
+                </div>
+            </details>
+            <details class="sub-details" id="panel-editar-paciente">
+                <summary><h4>Editar Paciente</h4></summary>
+                <div class="sub-details-content">
+                    <div id="editar-busqueda-container">
+                            <div class="editar-busqueda-row">
+                                <input type="text" id="input-buscar-editar" name="input-buscar-editar" placeholder="Buscar por DNI o Apellido y Nombre..." />
+                                <button id="btn-limpiar-busqueda-editar" type="button" title="Limpiar búsqueda">
+                                    <span role="img" aria-label="Limpiar">🧹</span>
+                                </button>
+                            </div>
+                            <div id="info-busqueda-dni-editar">Si busca por DNI, debe presionar <b>Enter</b> luego de escribir o pegar el número completo.</div>
+                        <ul id="listado-pacientes-editar" class="listado-pacientes"></ul>
+                        <div id="form-editar-paciente-container"></div>
+                    </div>
+                </div>
+            </details>
+        </div>
+
+        <details id="details-admin">
+            <summary>
+                <h3>⚙️ Administración</h3>
+            </summary>
+            <div class="details-content">
+                <h2>Administración del Sistema</h2>
+                
+                <p>Los códigos de registro fijos para nuevos usuarios son:</p>
+                <div class="code-display-container">
+                    <div class="code-display-item">
+                        <strong>ADMINISTRATIVO:</strong>
+                        <span>ADMIN123</span>
+                    </div>
+                    <div class="code-display-item">
+                        <strong>AUDITOR:</strong>
+                        <span>AUDITOR123</span>
+                    </div>
+                </div>
+                <small>Guarde y comparta estos códigos de forma segura.</small>
+
+                <div id="panel-admin-usuarios">
+                    <h3>Gestionar Usuarios</h3>
+                    <div id="lista-usuarios-admin">
+                        </div>
+                </div>
+            </div>
+        </details>
+    </div>
+
+    <script src="app.js"></script>
+    
+</body>
+</html>

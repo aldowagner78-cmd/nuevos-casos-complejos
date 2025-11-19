@@ -1196,3 +1196,161 @@ function subirArchivosAPaciente(dni, filesData) {
     throw new Error("Error al subir archivos: " + e.message);
   }
 }
+
+/*
+=================================================================
+FUNCIONES DE ADMINISTRACIÓN DE USUARIOS
+=================================================================
+*/
+
+/**
+ * LISTAR USUARIOS (excluye al usuario actual de la sesión)
+ */
+function listarUsuarios() {
+  try {
+    const session = obtenerDatosSesion();
+    if (!session || session.rol !== 'administrativo') {
+      throw new Error('Acceso denegado. Solo administrativos pueden ver usuarios.');
+    }
+    
+    const ss = SpreadsheetApp.openByUrl(SS_URL);
+    const ws = ss.getSheetByName(SHEET_USUARIOS);
+    
+    const data = ws.getRange(2, 1, ws.getLastRow() - 1, 3).getValues();
+    const usuarios = [];
+    
+    for (let i = 0; i < data.length; i++) {
+      const usuario = data[i][0];
+      const rol = data[i][2].toString().toLowerCase().trim();
+      
+      // Excluir al usuario actual de la sesión
+      if (usuario.toLowerCase() !== session.usuario.toLowerCase()) {
+        usuarios.push({
+          usuario: usuario,
+          rol: rol
+        });
+      }
+    }
+    
+    Logger.log(`✅ ${usuarios.length} usuarios listados (excluyendo usuario actual)`);
+    return usuarios;
+    
+  } catch (error) {
+    Logger.log('❌ Error en listarUsuarios: ' + error.message);
+    throw new Error('Error al listar usuarios: ' + error.message);
+  }
+}
+
+/**
+ * ELIMINAR USUARIO
+ */
+function eliminarUsuario(usuarioAEliminar) {
+  try {
+    const session = obtenerDatosSesion();
+    if (!session || session.rol !== 'administrativo') {
+      throw new Error('Acceso denegado. Solo administrativos pueden eliminar usuarios.');
+    }
+    
+    if (session.usuario.toLowerCase() === usuarioAEliminar.toLowerCase()) {
+      throw new Error('No puede eliminarse a sí mismo.');
+    }
+    
+    const ss = SpreadsheetApp.openByUrl(SS_URL);
+    const ws = ss.getSheetByName(SHEET_USUARIOS);
+    
+    // Buscar usuario usando TextFinder
+    const finder = ws.getRange("A:A").createTextFinder(usuarioAEliminar).matchEntireCell(true);
+    const cell = finder.findNext();
+    
+    if (!cell) {
+      throw new Error('Usuario no encontrado.');
+    }
+    
+    const fila = cell.getRow();
+    ws.deleteRow(fila);
+    
+    Logger.log(`✅ Usuario eliminado: ${usuarioAEliminar}`);
+    return { message: `Usuario ${usuarioAEliminar} eliminado exitosamente.` };
+    
+  } catch (error) {
+    Logger.log('❌ Error en eliminarUsuario: ' + error.message);
+    throw new Error('Error al eliminar usuario: ' + error.message);
+  }
+}
+
+/**
+ * CAMBIAR ROL DE USUARIO
+ */
+function cambiarRolUsuario(usuarioACambiar, nuevoRol) {
+  try {
+    const session = obtenerDatosSesion();
+    if (!session || session.rol !== 'administrativo') {
+      throw new Error('Acceso denegado. Solo administrativos pueden cambiar roles.');
+    }
+    
+    if (session.usuario.toLowerCase() === usuarioACambiar.toLowerCase()) {
+      throw new Error('No puede cambiar su propio rol.');
+    }
+    
+    if (nuevoRol !== 'administrativo' && nuevoRol !== 'auditor') {
+      throw new Error('Rol no válido. Debe ser "administrativo" o "auditor".');
+    }
+    
+    const ss = SpreadsheetApp.openByUrl(SS_URL);
+    const ws = ss.getSheetByName(SHEET_USUARIOS);
+    
+    // Buscar usuario usando TextFinder
+    const finder = ws.getRange("A:A").createTextFinder(usuarioACambiar).matchEntireCell(true);
+    const cell = finder.findNext();
+    
+    if (!cell) {
+      throw new Error('Usuario no encontrado.');
+    }
+    
+    const fila = cell.getRow();
+    ws.getRange(fila, 3).setValue(nuevoRol);
+    
+    Logger.log(`✅ Rol de ${usuarioACambiar} actualizado a ${nuevoRol}`);
+    return { message: `Rol de ${usuarioACambiar} actualizado a ${nuevoRol}.` };
+    
+  } catch (error) {
+    Logger.log('❌ Error en cambiarRolUsuario: ' + error.message);
+    throw new Error('Error al cambiar rol: ' + error.message);
+  }
+}
+
+/**
+ * RESETEAR CONTRASEÑA DE USUARIO
+ */
+function resetearPasswordUsuario(usuarioAResetear) {
+  try {
+    const session = obtenerDatosSesion();
+    if (!session || session.rol !== 'administrativo') {
+      throw new Error('Acceso denegado. Solo administrativos pueden resetear contraseñas.');
+    }
+    
+    const PASS_RESET_GENERICA = '111111';
+    
+    const ss = SpreadsheetApp.openByUrl(SS_URL);
+    const ws = ss.getSheetByName(SHEET_USUARIOS);
+    
+    // Buscar usuario usando TextFinder
+    const finder = ws.getRange("A:A").createTextFinder(usuarioAResetear).matchEntireCell(true);
+    const cell = finder.findNext();
+    
+    if (!cell) {
+      throw new Error('Usuario no encontrado.');
+    }
+    
+    const fila = cell.getRow();
+    ws.getRange(fila, 2).setValue(PASS_RESET_GENERICA);
+    
+    Logger.log(`✅ Contraseña reseteada para: ${usuarioAResetear}`);
+    return { message: `Contraseña de ${usuarioAResetear} reseteada a '${PASS_RESET_GENERICA}'.` };
+    
+  } catch (error) {
+    Logger.log('❌ Error en resetearPasswordUsuario: ' + error.message);
+    throw new Error('Error al resetear contraseña: ' + error.message);
+  }
+}
+

@@ -430,6 +430,11 @@
             
             console.log('DOMContentLoaded - ¿Es admin?', esAdmin);
             console.log('Usuario es ' + (esAdmin ? 'ADMIN' : 'AUDITOR') + ' - El CSS controla la visibilidad');
+            
+            // Cargar lista de usuarios si es administrativo
+            if (esAdmin) {
+                cargarListaUsuariosAdmin();
+            }
         });
 
         // --- Logout ---
@@ -1834,6 +1839,174 @@
             const partes = fecha.split('-');
             if (partes.length === 3) return partes[2] + '/' + partes[1] + '/' + partes[0];
             return fecha;
+        }
+        
+        // ============================================================================
+        // FUNCIONES DE ADMINISTRACIÓN DE USUARIOS
+        // ============================================================================
+        
+        /**
+         * Carga la lista de usuarios en el panel de administración
+         */
+        function cargarListaUsuariosAdmin() {
+            const listaUsuariosAdminDiv = document.getElementById('lista-usuarios-admin');
+            if (!listaUsuariosAdminDiv) return;
+            
+            listaUsuariosAdminDiv.innerHTML = '<span class="btn-spinner"></span> Cargando usuarios...';
+            
+            google.script.run
+                .withSuccessHandler(function(usuarios) {
+                    if (!usuarios || usuarios.length === 0) {
+                        listaUsuariosAdminDiv.innerHTML = '<p>No hay otros usuarios registrados.</p>';
+                        return;
+                    }
+                    
+                    let tablaHtml = '<table><thead><tr>';
+                    tablaHtml += '<th>Usuario</th>';
+                    tablaHtml += '<th>Rol</th>';
+                    tablaHtml += '<th>Acciones</th>';
+                    tablaHtml += '</tr></thead><tbody>';
+                    
+                    usuarios.forEach(function(u) {
+                        tablaHtml += '<tr data-usuario-fila="' + u.usuario + '">';
+                        tablaHtml += '<td>' + u.usuario + '</td>';
+                        tablaHtml += '<td>';
+                        tablaHtml += '<select class="select-rol" data-usuario="' + u.usuario + '">';
+                        tablaHtml += '<option value="administrativo"' + (u.rol === 'administrativo' ? ' selected' : '') + '>Administrativo</option>';
+                        tablaHtml += '<option value="auditor"' + (u.rol === 'auditor' ? ' selected' : '') + '>Auditor</option>';
+                        tablaHtml += '</select>';
+                        tablaHtml += '</td>';
+                        tablaHtml += '<td class="admin-actions">';
+                        tablaHtml += '<button class="btn-eliminar btn-reset-pass" data-usuario="' + u.usuario + '">Resetear Pass</button>';
+                        tablaHtml += '<button class="btn-eliminar btn-eliminar-usuario" data-usuario="' + u.usuario + '">Eliminar</button>';
+                        tablaHtml += '</td>';
+                        tablaHtml += '</tr>';
+                    });
+                    
+                    tablaHtml += '</tbody></table>';
+                    listaUsuariosAdminDiv.innerHTML = tablaHtml;
+                })
+                .withFailureHandler(function(err) {
+                    listaUsuariosAdminDiv.innerHTML = '<p style="color: red;">Error al cargar usuarios: ' + err.message + '</p>';
+                })
+                .listarUsuarios();
+        }
+        
+        // Event listener delegado para el panel de administración
+        document.addEventListener('click', function(e) {
+            const target = e.target;
+            
+            // Botón Resetear Password
+            if (target.classList.contains('btn-reset-pass')) {
+                const usuario = target.getAttribute('data-usuario');
+                mostrarModalAccion({
+                    titulo: 'Resetear Contraseña',
+                    mensaje: '¿Seguro que desea resetear la contraseña de ' + usuario + '? La nueva contraseña será "111111".',
+                    textoAccion: 'Resetear',
+                    onConfirm: function() {
+                        resetearPasswordAdmin(usuario);
+                    }
+                });
+            }
+            
+            // Botón Eliminar Usuario
+            if (target.classList.contains('btn-eliminar-usuario')) {
+                const usuario = target.getAttribute('data-usuario');
+                const fila = target.closest('tr');
+                mostrarModalAccion({
+                    titulo: 'Eliminar Usuario',
+                    mensaje: '¡ATENCIÓN! ¿Seguro que desea ELIMINAR PERMANENTEMENTE al usuario ' + usuario + '?',
+                    textoAccion: 'Eliminar',
+                    onConfirm: function() {
+                        eliminarUsuarioAdmin(usuario, fila);
+                    }
+                });
+            }
+        });
+        
+        // Event listener delegado para cambio de rol
+        document.addEventListener('change', function(e) {
+            const target = e.target;
+            
+            if (target.classList.contains('select-rol')) {
+                const usuario = target.getAttribute('data-usuario');
+                const nuevoRol = target.value;
+                mostrarModalAccion({
+                    titulo: 'Cambiar Rol',
+                    mensaje: '¿Seguro que desea cambiar el rol de ' + usuario + ' a ' + nuevoRol + '?',
+                    textoAccion: 'Cambiar',
+                    onConfirm: function() {
+                        cambiarRolAdmin(usuario, nuevoRol);
+                    }
+                });
+            }
+        });
+        
+        /**
+         * Resetea la contraseña de un usuario
+         */
+        function resetearPasswordAdmin(usuario) {
+            google.script.run
+                .withSuccessHandler(function(resultado) {
+                    mostrarModalAviso({
+                        titulo: 'Contraseña Reseteada',
+                        mensaje: resultado.message
+                    });
+                })
+                .withFailureHandler(function(err) {
+                    mostrarModalAviso({
+                        titulo: 'Error',
+                        mensaje: err.message
+                    });
+                })
+                .resetearPasswordUsuario(usuario);
+        }
+        
+        /**
+         * Elimina un usuario del sistema
+         */
+        function eliminarUsuarioAdmin(usuario, filaElement) {
+            google.script.run
+                .withSuccessHandler(function(resultado) {
+                    if (filaElement) filaElement.remove();
+                    mostrarModalAviso({
+                        titulo: 'Usuario Eliminado',
+                        mensaje: resultado.message
+                    });
+                })
+                .withFailureHandler(function(err) {
+                    mostrarModalAviso({
+                        titulo: 'Error',
+                        mensaje: 'Error: ' + err.message
+                    });
+                })
+                .eliminarUsuario(usuario);
+        }
+        
+        /**
+         * Cambia el rol de un usuario
+         */
+        function cambiarRolAdmin(usuario, nuevoRol) {
+            google.script.run
+                .withSuccessHandler(function(resultado) {
+                    mostrarModalAviso({
+                        titulo: 'Rol Actualizado',
+                        mensaje: resultado.message,
+                        onClose: function() {
+                            cargarListaUsuariosAdmin();
+                        }
+                    });
+                })
+                .withFailureHandler(function(err) {
+                    mostrarModalAviso({
+                        titulo: 'Error',
+                        mensaje: 'Error: ' + err.message,
+                        onClose: function() {
+                            cargarListaUsuariosAdmin();
+                        }
+                    });
+                })
+                .cambiarRolUsuario(usuario, nuevoRol);
         }
         
     </script>

@@ -267,11 +267,11 @@
                                 <textarea id="new-observaciones" name="observaciones" rows="3" placeholder="Observaciones adicionales" autocomplete="off"></textarea>
                             </div>
                             <div class="form-group">
-                                <label>Archivos Adjuntos</label>
-                                <p style="font-size: 0.9em; color: #666; margin: 4px 0;">
-                                    Los archivos se pueden subir directamente a la carpeta de Google Drive del paciente después de crearlo. 
-                                    El link a la carpeta aparecerá en la ficha del paciente.
-                                </p>
+                                <label for="new-archivos-adjuntos">Archivos Adjuntos (opcional)</label>
+                                <input type="file" id="new-archivos-adjuntos" name="archivos_adjuntos" multiple accept="image/*,.pdf,.doc,.docx,.xls,.xlsx">
+                                <small style="display:block; font-size: 0.85em; color: #666; margin-top: 4px;">
+                                    Puede seleccionar múltiples archivos (imágenes, PDF, documentos). Se subirán automáticamente a Google Drive.
+                                </small>
                             </div>
                             <button type="submit" id="btn-guardar-paciente">Guardar Paciente</button>
                             <div id="alerta-paciente" class="alerta"></div>
@@ -836,18 +836,69 @@
                 alerta.innerHTML = '<span class="btn-spinner"></span> Guardando paciente...';
                 alerta.style.display = 'block';
                 
-                google.script.run
-                    .withSuccessHandler(function(resultado) {
-                        alert(resultado.message);
-                        formNuevoPaciente.reset();
-                        actualizarCamposTitular(); // Resetear visibilidad
-                        alerta.style.display = 'none';
-                    })
-                    .withFailureHandler(function(err) {
-                        alert('Error: ' + err.message);
-                        alerta.innerHTML = '<p style="color:red;">Error: ' + err.message + '</p>';
-                    })
-                    .guardarNuevoPaciente_web(formData);
+                // 📎 FASE 2.1: Detectar si hay archivos adjuntos
+                const fileInput = document.getElementById('new-archivos-adjuntos');
+                const files = fileInput && fileInput.files ? fileInput.files : [];
+                
+                if (files.length > 0) {
+                    // Hay archivos: convertir a Base64 con FileReader
+                    const filesData = [];
+                    let filesProcessed = 0;
+                    
+                    Array.from(files).forEach(function(file) {
+                        const reader = new FileReader();
+                        
+                        reader.onload = function(e) {
+                            // Extraer solo el Base64 (sin el prefijo data:...;base64,)
+                            const base64String = e.target.result.split(',')[1];
+                            
+                            filesData.push({
+                                name: file.name,
+                                mimeType: file.type,
+                                data: base64String
+                            });
+                            
+                            filesProcessed++;
+                            
+                            // Cuando todos los archivos estén procesados, enviar al backend
+                            if (filesProcessed === files.length) {
+                                google.script.run
+                                    .withSuccessHandler(function(resultado) {
+                                        alert(resultado.message);
+                                        formNuevoPaciente.reset();
+                                        actualizarCamposTitular();
+                                        alerta.style.display = 'none';
+                                    })
+                                    .withFailureHandler(function(err) {
+                                        alert('Error: ' + err.message);
+                                        alerta.innerHTML = '<p style="color:red;">Error: ' + err.message + '</p>';
+                                    })
+                                    .guardarPacienteConArchivos(formData, filesData);
+                            }
+                        };
+                        
+                        reader.onerror = function() {
+                            alert('Error al leer el archivo: ' + file.name);
+                            alerta.style.display = 'none';
+                        };
+                        
+                        reader.readAsDataURL(file);
+                    });
+                } else {
+                    // Sin archivos: llamada normal
+                    google.script.run
+                        .withSuccessHandler(function(resultado) {
+                            alert(resultado.message);
+                            formNuevoPaciente.reset();
+                            actualizarCamposTitular();
+                            alerta.style.display = 'none';
+                        })
+                        .withFailureHandler(function(err) {
+                            alert('Error: ' + err.message);
+                            alerta.innerHTML = '<p style="color:red;">Error: ' + err.message + '</p>';
+                        })
+                        .guardarNuevoPaciente_web(formData);
+                }
             });
         }
         
@@ -1159,8 +1210,69 @@
         =================================================================
         */
         
-        // TODO: Implementar formulario de búsqueda avanzada cuando esté listo el HTML
-        // La función busquedaAvanzada_web ya está lista en el backend
+        const formBusquedaAvanzada = document.getElementById('form-busqueda-avanzada');
+        const listadoResultadosAvanzada = document.getElementById('listado-resultados-avanzada');
+        const btnLimpiarBusquedaAvanzada = document.getElementById('btn-limpiar-busqueda-avanzada');
+        
+        if (formBusquedaAvanzada) {
+            // Listener para submit del formulario
+            formBusquedaAvanzada.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // Capturar valores de los filtros
+                const filtros = {
+                    afiliado: document.getElementById('adv-afiliado').value.trim(),
+                    localidad: document.getElementById('adv-localidad').value.trim(),
+                    condicion: document.getElementById('adv-condicion').value,
+                    tipo_afiliado: document.getElementById('adv-tipo-afiliado').value,
+                    prestador: document.getElementById('adv-prestador').value.trim(),
+                    anio: document.getElementById('adv-anio').value.trim()
+                };
+                
+                // Validar que al menos un filtro esté completo
+                const tieneAlgunFiltro = Object.values(filtros).some(function(val) {
+                    return val !== '';
+                });
+                
+                if (!tieneAlgunFiltro) {
+                    listadoResultadosAvanzada.innerHTML = '<p style="color:#888;font-style:italic;padding:10px;">Debe completar al menos un filtro para realizar la búsqueda.</p>';
+                    return;
+                }
+                
+                // Mostrar indicador de carga
+                listadoResultadosAvanzada.innerHTML = '<span class="btn-spinner"></span> Buscando...';
+                
+                // Llamar al backend
+                google.script.run
+                    .withSuccessHandler(function(resultados) {
+                        if (!resultados || resultados.length === 0) {
+                            listadoResultadosAvanzada.innerHTML = '<p style="color:#888;font-style:italic;padding:10px;">No se encontraron pacientes con los filtros especificados.</p>';
+                            return;
+                        }
+                        
+                        // Renderizar resultados (mismo formato que búsqueda simple)
+                        let html = '<ul class="listado-pacientes">';
+                        resultados.forEach(function(pac) {
+                            html += '<li><button type="button" onclick="seleccionarPaciente(\'' + pac.dni + '\')">' + pac.dni + ' - ' + pac.nombre + '</button></li>';
+                        });
+                        html += '</ul>';
+                        
+                        listadoResultadosAvanzada.innerHTML = html;
+                    })
+                    .withFailureHandler(function(err) {
+                        listadoResultadosAvanzada.innerHTML = '<p style="color:red;padding:10px;">Error: ' + err.message + '</p>';
+                    })
+                    .busquedaAvanzada_web(filtros);
+            });
+            
+            // Listener para botón Limpiar Filtros
+            if (btnLimpiarBusquedaAvanzada) {
+                btnLimpiarBusquedaAvanzada.addEventListener('click', function() {
+                    formBusquedaAvanzada.reset();
+                    listadoResultadosAvanzada.innerHTML = '';
+                });
+            }
+        }
         
     </script>
 </body>

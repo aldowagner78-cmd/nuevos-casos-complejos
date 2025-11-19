@@ -558,14 +558,12 @@ function guardarNuevoPaciente_web(formData) {
 
     const dniNormalizado = formData.dni.toString().trim();
     
-    // Verificar si el DNI ya existe
-    const lastRow = wsPacientes.getLastRow();
-    if (lastRow > 1) {
-      const dnis = wsPacientes.getRange(2, 1, lastRow - 1, 1).getValues();
-      const dniExiste = dnis.some(fila => fila[0] && fila[0].toString().trim() == dniNormalizado);
-      if (dniExiste) {
-        throw new Error(`El DNI ${dniNormalizado} ya existe en la base de datos.`);
-      }
+    // ⚡ OPTIMIZACIÓN: Verificar si el DNI ya existe usando TextFinder (O(1))
+    const finder = wsPacientes.getRange("A:A").createTextFinder(dniNormalizado).matchEntireCell(true);
+    const dniExiste = finder.findNext();
+    
+    if (dniExiste) {
+      throw new Error(`El DNI ${dniNormalizado} ya existe en la base de datos.`);
     }
 
     // Crear carpeta de Drive para archivos del paciente
@@ -633,6 +631,7 @@ function guardarNuevoPaciente_web(formData) {
 
 /**
  * ELIMINAR PACIENTE
+ * ⚡ OPTIMIZACIÓN: Usa TextFinder para ubicar filas sin leer toda la hoja
  */
 function eliminarPaciente(dni) {
   try {
@@ -640,33 +639,25 @@ function eliminarPaciente(dni) {
     const wsPacientes = ss.getSheetByName(SHEET_PACIENTES);
     const wsPrestaciones = ss.getSheetByName(SHEET_PRESTACIONES);
     
-    // Buscar y eliminar paciente
-    const pacientesData = wsPacientes.getRange(2, 1, wsPacientes.getLastRow() - 1, 1).getValues();
-    let filaAEliminar = -1;
+    Logger.log("🗑️ Eliminando paciente DNI: " + dni);
     
-    for (let i = 0; i < pacientesData.length; i++) {
-      if (pacientesData[i][0] == dni) {
-        filaAEliminar = i + 2; // +2 porque empezamos en fila 2 y el índice es 0-based
-        break;
-      }
-    }
+    // ⚡ OPTIMIZACIÓN: Buscar paciente usando TextFinder (O(1))
+    const finderPaciente = wsPacientes.getRange("A:A").createTextFinder(dni.toString().trim()).matchEntireCell(true);
+    const pacienteCell = finderPaciente.findNext();
     
-    if (filaAEliminar === -1) {
+    if (!pacienteCell) {
       throw new Error('Paciente no encontrado');
     }
     
-    // Eliminar todas las prestaciones del paciente
-    const prestacionesData = wsPrestaciones.getRange(2, 1, wsPrestaciones.getLastRow() - 1, 2).getValues();
-    const filasAEliminarPrestaciones = [];
+    const filaAEliminar = pacienteCell.getRow();
     
-    for (let i = prestacionesData.length - 1; i >= 0; i--) {
-      if (prestacionesData[i][1] == dni) {
-        filasAEliminarPrestaciones.push(i + 2);
-      }
-    }
+    // ⚡ OPTIMIZACIÓN: Buscar todas las prestaciones del paciente usando TextFinder
+    const finderPrestaciones = wsPrestaciones.getRange("B:B").createTextFinder(dni.toString().trim()).matchEntireCell(true);
+    const prestacionesEncontradas = finderPrestaciones.findAll();
     
-    // Eliminar prestaciones (de atrás hacia adelante para no alterar índices)
-    filasAEliminarPrestaciones.forEach(fila => {
+    // Eliminar prestaciones de atrás hacia adelante para no alterar índices
+    const filasPrestaciones = prestacionesEncontradas.map(cell => cell.getRow()).sort((a, b) => b - a);
+    filasPrestaciones.forEach(fila => {
       wsPrestaciones.deleteRow(fila);
     });
     
@@ -676,44 +667,44 @@ function eliminarPaciente(dni) {
     // ⚡ OPTIMIZACIÓN: Invalidar caché después de eliminar paciente
     invalidarCachePacientes();
     
-    Logger.log("✅ Paciente eliminado: " + dni);
+    Logger.log("✅ Paciente eliminado: " + dni + " (" + filasPrestaciones.length + " prestaciones)");
     
-    return { message: 'Paciente eliminado correctamente junto con ' + filasAEliminarPrestaciones.length + ' prestaciones.' };
+    return { message: 'Paciente eliminado correctamente junto con ' + filasPrestaciones.length + ' prestaciones.' };
     
   } catch (error) {
-    Logger.log('Error en eliminarPaciente: ' + error.message);
+    Logger.log('❌ Error en eliminarPaciente: ' + error.message);
     throw new Error('Error al eliminar paciente: ' + error.message);
   }
 }
 
 /**
  * ELIMINAR PRESTACIÓN
+ * ⚡ OPTIMIZACIÓN: Usa TextFinder para ubicar el ID sin leer toda la hoja
  */
 function eliminarPrestacion(prestacionId) {
   try {
     const ss = SpreadsheetApp.openByUrl(SS_URL);
     const wsPrestaciones = ss.getSheetByName(SHEET_PRESTACIONES);
     
-    const prestacionesData = wsPrestaciones.getRange(2, 1, wsPrestaciones.getLastRow() - 1, 1).getValues();
-    let filaAEliminar = -1;
+    Logger.log("🗑️ Eliminando prestación ID: " + prestacionId);
     
-    for (let i = 0; i < prestacionesData.length; i++) {
-      if (prestacionesData[i][0] == prestacionId) {
-        filaAEliminar = i + 2;
-        break;
-      }
-    }
+    // ⚡ OPTIMIZACIÓN: Buscar prestación usando TextFinder (O(1))
+    const finder = wsPrestaciones.getRange("A:A").createTextFinder(prestacionId.toString()).matchEntireCell(true);
+    const prestacionCell = finder.findNext();
     
-    if (filaAEliminar === -1) {
+    if (!prestacionCell) {
       throw new Error('Prestación no encontrada');
     }
     
+    const filaAEliminar = prestacionCell.getRow();
     wsPrestaciones.deleteRow(filaAEliminar);
+    
+    Logger.log("✅ Prestación eliminada correctamente");
     
     return { message: 'Prestación eliminada correctamente.' };
     
   } catch (error) {
-    Logger.log('Error en eliminarPrestacion: ' + error.message);
+    Logger.log('❌ Error en eliminarPrestacion: ' + error.message);
     throw new Error('Error al eliminar prestación: ' + error.message);
   }
 }

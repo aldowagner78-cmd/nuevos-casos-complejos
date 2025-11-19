@@ -1,0 +1,2873 @@
+<style>
+/* Campo DNI no seleccionable en edición de paciente */
+.input-dni-no-select {
+    background-color: var(--color-dni-bg, #e3e6ee);
+    color: var(--color-dni-fg, #222);
+    cursor: default;
+    user-select: none;
+    pointer-events: none;
+}
+
+/* Fondo adaptativo según tema (puedes ajustar los colores en los temas) */
+.tema-bg {
+    background-color: var(--color-dni-bg, #e3e6ee) !important;
+}
+
+/* === Búsqueda Avanzada === */
+#panel-busqueda-avanzada {
+    flex-basis: 100%;
+    margin-bottom: 14px;
+    background-color: var(--panel-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: 0 2px 4px color-mix(in srgb, var(--shadow-color) 40%, transparent);
+    overflow: hidden;
+}
+#panel-busqueda-avanzada summary {
+    cursor: pointer;
+    padding: 11px 18px;
+    background-color: var(--panel-bg);
+    color: var(--primary-color);
+    transition: background-color 0.3s ease;
+    border-radius: 8px 8px 0 0;
+}
+#panel-busqueda-avanzada summary:hover {
+    background-color: color-mix(in srgb, var(--panel-bg) 85%, var(--primary-color) 15%);
+}
+#panel-busqueda-avanzada summary h4 {
+    margin: 0;
+    color: inherit;
+    font-size: 1.05rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+#panel-busqueda-avanzada .panel-content {
+    padding: 0;
+    background-color: var(--panel-bg);
+    border-radius: 0 0 8px 8px;
+}
+
+/* Contenedor de dos columnas */
+.busqueda-avanzada-container {
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    gap: 0;
+    min-height: 400px;
+}
+
+/* Columna izquierda: Filtros */
+.busqueda-avanzada-filtros {
+    padding: 18px;
+    background-color: var(--panel-bg);
+    border-right: 1px solid var(--border-color);
+    overflow-y: auto;
+    max-height: 600px;
+}
+
+/* Columna derecha: Resultados */
+.busqueda-avanzada-resultados {
+    padding: 18px;
+    background-color: var(--bg-color);
+    overflow-y: auto;
+    max-height: 600px;
+}
+
+#listado-resultados-avanzada {
+    min-height: 200px;
+}
+
+#listado-resultados-avanzada:empty::before {
+    content: "Los resultados de la búsqueda aparecerán aquí";
+    display: block;
+    text-align: center;
+    color: var(--text-light);
+    font-style: italic;
+    padding: 40px 20px;
+}
+
+/* Responsive: columna única en pantallas pequeñas */
+@media (max-width: 900px) {
+    .busqueda-avanzada-container {
+        grid-template-columns: 1fr;
+    }
+    .busqueda-avanzada-filtros {
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
+        max-height: none;
+    }
+    .busqueda-avanzada-resultados {
+        max-height: 400px;
+    }
+}
+
+/* Tooltips */
+.tooltip-text {
+    display: none;
+    font-size: 0.85em;
+    color: var(--text-light);
+    margin-top: 4px;
+    font-style: italic;
+}
+.form-group input:focus + .tooltip-text,
+.form-group select:focus + .tooltip-text {
+    display: block;
+}
+/* Form Actions */
+.form-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid var(--border-color);
+}
+.btn-secondary {
+    background-color: var(--text-light);
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: opacity 0.3s;
+}
+.btn-secondary:hover {
+    opacity: 0.8;
+}
+.btn-primary {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+.btn-primary:hover {
+    background-color: var(--primary-hover);
+}
+/* Modal de Confirmación */
+#modal-confirmacion-busqueda {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+}
+#modal-confirmacion-busqueda.show {
+    display: flex;
+}
+.modal-confirmacion-content {
+    background-color: var(--panel-bg);
+    padding: 30px;
+    border-radius: 10px;
+    max-width: 500px;
+    width: 90%;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+.modal-confirmacion-content h3 {
+    margin-top: 0;
+    color: var(--primary-color);
+}
+.modal-confirmacion-content .resumen-filtros {
+    background-color: var(--bg-color);
+    padding: 15px;
+    border-radius: 5px;
+    margin: 15px 0;
+    border-left: 4px solid var(--primary-color);
+}
+.modal-confirmacion-content .advertencia {
+    color: var(--warning-color, #ff9800);
+    font-weight: 600;
+    margin-top: 10px;
+}
+.modal-confirmacion-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 20px;
+}
+
+/* Modal de alternativas de búsqueda */
+#modal-alternativas-busqueda {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 10001;
+}
+#modal-alternativas-busqueda.show {
+    display: flex;
+}
+.alternativas-list {
+    margin: 20px 0;
+    max-height: 400px;
+    overflow-y: auto;
+}
+.alternativa-item {
+    background-color: var(--bg-color);
+    padding: 15px;
+    border-radius: 5px;
+    margin-bottom: 10px;
+    border-left: 4px solid var(--primary-color);
+}
+.alternativa-item p {
+    margin: 0 0 10px 0;
+}
+.btn-ver-alternativa {
+    width: 100%;
+    padding: 8px;
+    margin-top: 5px;
+}
+
+/* --- Estilos para selects de fecha de nacimiento (date-dropdowns) --- */
+.date-dropdowns {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-top: 2px;
+    margin-bottom: 2px;
+    flex-wrap: wrap;
+}
+.date-dropdowns select {
+    padding: 0 8px;
+    border: 1.5px solid var(--primary-color);
+    border-radius: 7px;
+    background: var(--bg-color);
+    color: var(--text-color);
+    font-size: 0.85rem;
+    min-width: 40px;
+    height: 32px;
+    line-height: 32px;
+    transition: border 0.18s, box-shadow 0.18s;
+    outline: none;
+    width: 33%; /* Fallback para flex */
+    cursor: pointer;
+    vertical-align: middle;
+    /* Sin estilos forzados: se mantiene el renderizado nativo del select */
+}
+
+/* Placeholder visible en los selects */
+.date-dropdowns select option[value=""][disabled] {
+    color: #999;
+    font-style: italic;
+}
+
+.date-dropdowns .date-select-day {
+    flex: 0 0 auto; /* No flex, tamaño fijo */
+    font-size: 0.85rem;
+    height: 30px;
+    width: 60px !important;
+    max-width: 60px;
+}
+.date-dropdowns .date-select-month {
+    flex: 0 0 auto; /* No flex, tamaño fijo */
+    font-size: 0.85rem;
+    height: 30px;
+    width: 60px !important;
+    max-width: 60px;
+}
+.date-dropdowns .date-select-year {
+    flex: 0 0 auto; /* No flex, tamaño fijo */
+    font-size: 0.85rem;
+    height: 30px;
+    width: 95px !important;
+    max-width: 95px;
+}
+.date-dropdowns select#new-fecha-anio,
+.date-dropdowns select#edit-fecha-anio,
+.date-dropdowns select#prest-fecha-anio {
+    min-width: unset; /* Quitar min-width que interfiere */
+}
+.date-dropdowns label,
+.date-dropdowns .date-label {
+    font-size: 0.85rem !important;
+    margin-right: 2px;
+    color: #666;
+    font-weight: 400;
+}
+.date-dropdowns select:focus {
+    border-color: var(--primary-hover);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary-color) 20%, transparent);
+}
+@media (max-width: 600px) {
+    .date-dropdowns {
+        flex-direction: column;
+        gap: 4px;
+        align-items: stretch;
+    }
+    .date-dropdowns select {
+        min-width: 0;
+        width: 100%;
+    }
+}
+
+/* --- Estilos para el calendario desplegable --- */
+.date-picker-container {
+    position: relative;
+    width: 100%;
+}
+
+.btn-calendar-icon {
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    width: 32px;
+    height: 28px;
+    cursor: pointer;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+    padding: 0;
+    margin-left: 8px;
+    flex-shrink: 0;
+}
+
+.btn-calendar-icon:hover {
+    background: var(--primary-hover);
+}
+
+.calendar-dropdown {
+    position: absolute;
+    bottom: calc(100% - 70px);
+    right: 0;
+    background: var(--panel-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 1100;
+    min-width: 200px;
+    max-width: 220px;
+}
+
+.calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.calendar-header span {
+    font-weight: 600;
+    color: var(--text-color);
+    font-size: 0.75rem;
+}
+
+.calendar-nav {
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 3px;
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    font-size: 0.75rem;
+    font-weight: bold;
+    transition: background 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
+
+.calendar-nav:hover {
+    background: var(--primary-hover);
+}
+
+.calendar-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 1px;
+    margin-bottom: 3px;
+}
+
+.calendar-weekdays span {
+    text-align: center;
+    font-size: 0.6rem;
+    font-weight: 600;
+    color: var(--text-light);
+    padding: 1px 0;
+}
+
+.calendar-days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+    margin-bottom: 6px;
+}
+
+.calendar-day {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border-color);
+    border-radius: 2px;
+    background: var(--bg-color);
+    color: var(--text-color);
+    cursor: pointer;
+    font-size: 0.65rem;
+    transition: all 0.2s;
+    min-height: 22px;
+}
+
+.calendar-day:hover {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.calendar-day.other-month {
+    color: var(--text-light);
+    opacity: 0.4;
+}
+
+.calendar-day.selected {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+    font-weight: bold;
+}
+
+.calendar-day.today {
+    border: 2px solid var(--primary-color);
+    font-weight: bold;
+}
+
+.calendar-footer {
+    display: flex;
+    gap: 4px;
+    margin-top: 6px;
+    padding-top: 4px;
+    border-top: 1px solid var(--border-color);
+}
+
+.btn-today,
+.btn-close-calendar {
+    flex: 1;
+    padding: 4px 6px;
+    border: 1px solid var(--border-color);
+    border-radius: 3px;
+    background: var(--bg-color);
+    color: var(--text-color);
+    cursor: pointer;
+    font-size: 0.7rem;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.btn-today {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+    font-weight: 600;
+}
+
+.btn-today:hover {
+    background: var(--primary-hover);
+    border-color: var(--primary-hover);
+}
+
+.btn-close-calendar:hover {
+    background: var(--border-color);
+}
+
+/* Adaptación del calendario al tema dark */
+body.theme-dark .calendar-dropdown {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+}
+
+body.theme-dark .calendar-day {
+    background: #22272e;
+}
+
+body.theme-dark .calendar-day:hover {
+    background: var(--primary-color);
+}
+
+@media (max-width: 600px) {
+    .calendar-dropdown {
+        bottom: auto;
+        top: 100%;
+        right: auto;
+        left: 0;
+        min-width: 200px;
+        margin-top: 4px;
+    }
+}
+
+/* --- Estilos para Mensajes (Login/Registro) --- */
+.message-area {
+    width: 100%;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border-radius: 8px;
+    font-weight: 500;
+    text-align: center;
+    box-sizing: border-box;
+}
+
+.message-area.error {
+    background-color: #ffebee; /* Rojo claro */
+    color: #c62828; /* Rojo oscuro */
+    border: 1px solid #c62828;
+}
+
+.message-area.success {
+    background-color: #e8f5e9; /* Verde claro */
+    color: #2e7d32; /* Verde oscuro */
+    border: 1px solid #2e7d32;
+}
+/* Botones de usuario y logout en el header: solo icono, sin fondo, sin padding ni border-radius */
+#navbar-user-btn, #btn-logout-icon {
+    background: none !important;
+    border: none;
+    cursor: pointer;
+    padding: 0 !important;
+    margin: 0 4px 0 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: auto;
+    height: auto;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background-color: transparent !important;
+    outline: none !important;
+    transition: none;
+}
+#btn-logout-icon { margin: 0 0 0 4px; }
+#navbar-user-btn:active, #navbar-user-btn:focus, #navbar-user-btn:hover,
+#btn-logout-icon:active, #btn-logout-icon:focus, #btn-logout-icon:hover {
+    background: none !important;
+    background-color: transparent !important;
+    box-shadow: none !important;
+    outline: none !important;
+}
+@media print {
+    @page {
+        size: A4 portrait;
+        margin: 2cm;
+    }
+
+/* --- Estilos para "Mantener Sesión Iniciada" --- */
+.form-group.remember-me {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin-bottom: 1rem;
+}
+
+.form-group.remember-me input[type="checkbox"] {
+    width: auto !important; /* Anula el width: 100% de otros inputs */
+    margin: 0 !important;
+    margin-right: 0.5cm !important; /* Espacio de medio centímetro después del checkbox */
+    transform: scale(1.2); /* Hacer el checkbox un poco más grande */
+    flex-shrink: 0; /* Evita que el checkbox se achique */
+    cursor: pointer;
+}
+
+.form-group.remember-me label {
+    display: inline !important; /* Sobrescribe el display: block de .form-group label */
+    margin: 0 !important; /* Anula márgenes default */
+    font-size: 0.9rem;
+    font-weight: normal !important; /* Anula el font-weight: 600 */
+    color: #555;
+    white-space: nowrap; /* Evitar salto de línea */
+    cursor: pointer;
+}
+/* Contenedor principal de la app, oculto por defecto */
+#app-container {
+    visibility: hidden;
+    opacity: 0;
+    transition: opacity 0.3s ease-in;
+}
+
+#app-container.loaded {
+    visibility: visible;
+    opacity: 1;
+}
+    /* ÁREA DE IMPRESIÓN DEL HISTORIAL: tipografía y limpieza general */
+    body.print-historial #print-area-historial,
+    body.print-historial #print-area-historial * {
+        font-family: Calibri, "Segoe UI", Arial, sans-serif !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        color: #000 !important;
+    }
+
+    /* Mostrar SOLO el área clonada de historial y el pie; ocultar demás */
+    body.print-historial #navbar,
+    body.print-historial .container,
+    body.print-historial .modal-backdrop,
+    body.print-historial #app-container {
+        display: none !important;
+    }
+    body.print-historial #print-area-historial {
+        display: block !important;
+    }
+
+    /* Encabezado de la PRIMERA página: "Apellido y Nombre – DNI" */
+    #print-historial-header {
+        font-size: 14pt;
+        font-weight: 700;
+        margin: 0 0 10pt 0;
+        padding: 0;
+    }
+
+    /* Repetición del encabezado de columnas en cada página y estilos solicitados */
+    body.print-historial #print-area-historial thead { display: table-header-group; }
+    body.print-historial #print-area-historial tfoot { display: table-footer-group; } /* por si se agrega futuro tfoot */
+
+    body.print-historial #print-area-historial table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+        table-layout: fixed; /* permite controlar anchos */
+    }
+
+    /* Bordes negros sólidos en TODAS las celdas para impresión */
+    body.print-historial #print-area-historial th,
+    body.print-historial #print-area-historial td {
+        border: 1px solid #000 !important; /* negro, bien visible */
+        vertical-align: middle !important;
+        padding: 6pt 6pt !important;
+    }
+
+    /* Encabezado de columnas: alineado a la izquierda, fondo gris, Calibri 10, negrita */
+    body.print-historial #print-area-historial thead th {
+        background: #e6e6e6 !important; /* gris */
+        text-align: left !important;  /* alineado a la izquierda */
+        vertical-align: middle !important;
+        font-size: 10pt !important;
+        font-weight: 700 !important;
+        color: #000 !important;
+        padding-left: 8pt !important;
+    }
+
+    /* Filas: Calibri 11, negro, izquierda */
+    body.print-historial #print-area-historial tbody td {
+        font-size: 11pt !important;
+        font-weight: 400 !important;
+        text-align: left !important;
+        line-height: 1.25 !important;
+    }
+
+    /* Anchos por columna (Fecha angosta, Prestador intermedia, Prestación ancha) */
+    body.print-historial #print-area-historial .col-fecha { width: 28mm !important; white-space: nowrap !important; text-align: center !important; }
+    body.print-historial #print-area-historial .col-prestador { width: 45mm !important; white-space: nowrap !important; }
+    body.print-historial #print-area-historial .col-prestacion { width: auto !important; white-space: normal !important; } /* se expande y permite envolver si no entra */
+
+    /* Evitar cortes feos en filas; dejar que la página se llene "estándar" */
+    body.print-historial #print-area-historial tr { page-break-inside: avoid; }
+
+    /* Ocultar botones/acciones en la tabla impresa */
+    body.print-historial #print-area-historial .col-acciones,
+    body.print-historial #print-area-historial .icon-btn-prestacion,
+    body.print-historial #print-area-historial button {
+        display: none !important;
+    }
+
+    /* Pie de página: "Santa Fe, fecha — Nombre — DNI — x/y" (derecha, cursiva, 10pt) */
+    .print-footer {
+        display: block !important;
+        position: fixed !important;
+        right: 2cm !important;
+        bottom: 1.2cm !important;
+        left: auto !important;
+        text-align: right !important;
+        font-style: italic !important;
+        font-size: 10pt !important;
+        font-family: Calibri, "Segoe UI", Arial, sans-serif !important;
+        background: transparent !important;
+        border: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        color: #000 !important;
+        width: auto !important;
+        min-width: 200px !important;
+        z-index: 9999 !important;
+        box-shadow: none !important;
+        pointer-events: none !important;
+    }
+    /* Sin paginación, solo texto fijo en el pie */
+}
+/* === Encabezado de historial con botón de impresión (alineado en la misma línea, a 1cm del texto) === */
+.prestaciones-header {
+    display: inline-flex;
+    align-items: center;
+    gap: 1cm;               /* separación exacta pedida */
+    white-space: nowrap;    /* evita salto entre texto y botón */
+    margin-top: 6px;
+    margin-bottom: 6px;
+}
+.prestaciones-header h4 {
+    margin: 0;              /* sin margen para mantener línea única */
+    padding: 0;
+}
+/* Reutiliza el botón existente para que sea idéntico al de la ficha */
+/* .prestaciones-header .icon-btn-print-ficha styles are defined globally; no additional styles here */
+
+/* === Estilos de impresión SOLO para historial de prestaciones === */
+#print-area-historial { display: none; }
+
+@media print {
+    @page {
+        size: A4 portrait;
+        margin: 2cm;
+    }
+
+    /* Modo impresión de HISTORIAL: mostrar SOLO el área clonada y el pie; ocultar todo lo demás (incluye navbar) */
+    body.print-historial * {
+        background: transparent !important;
+        box-shadow: none !important;
+    }
+    body.print-historial #navbar,
+    body.print-historial .container,
+    body.print-historial .modal-backdrop,
+    body.print-historial #app-container {
+        display: none !important;
+    }
+    body.print-historial #print-area-historial {
+        display: block !important;
+    }
+
+    /* Tabla en B/N, sin botones ni columna de acciones */
+    body.print-historial #print-area-historial,
+    body.print-historial #print-area-historial * {
+        color: #000 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    body.print-historial #print-area-historial table {
+        width: 100% !important;
+        border: 1px solid #000 !important;
+        border-collapse: collapse !important;
+        table-layout: fixed;
+    }
+    body.print-historial #print-area-historial th,
+    body.print-historial #print-area-historial td {
+        border: 1px solid #000 !important;
+        background: #fff !important;
+    }
+    body.print-historial #print-area-historial .col-acciones,
+    body.print-historial #print-area-historial .icon-btn-prestacion,
+    body.print-historial #print-area-historial button {
+        display: none !important;
+    }
+
+    /* Pie de página requerido */
+    .print-footer {
+        position: fixed;
+        right: 2cm;
+        bottom: 1.2cm;
+        font-style: italic;
+        font-size: 10pt;
+        color: #000 !important;
+        background: transparent !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        border: none !important;
+    }
+}
+/* --- Overrides para alineación y espaciado de botones imprimir y eliminar en ficha paciente --- */
+.footer-print-delete {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.icon-btn-print-ficha {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+}
+
+.patient-card-footer-actions .icon-btn-eliminar {
+    position: static;
+    top: auto;
+    right: auto;
+    left: auto;
+    transform: none;
+    margin: 0;
+    background: none !important;
+    border: none;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
+
+.patient-card-footer-actions #btn-eliminar-paciente {
+    background: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+/* --- Fin overrides alineación botones ficha paciente --- */
+.icon-btn-print-ficha:hover,
+.icon-btn-print-ficha:focus,
+.icon-btn-print-ficha:active {
+    background: none !important;
+    filter: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+}
+/* Botón imprimir ficha (icono impresora) */
+/* Botón imprimir ficha (icono impresora) */
+.icon-btn-print-ficha {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0 8px 0 0;
+    display: flex;
+    align-items: center;
+    margin-right: 8px;
+    height: 32px;
+}
+.icon-btn-print-ficha svg {
+    width: 22px;
+    height: 22px;
+    display: block;
+}
+
+/* Contenedor para imprimir y eliminar juntos */
+.footer-print-delete {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0;
+}
+body.theme-dark #navbar h1 {
+    color: #cbcaca !important;
+}
+body.theme-dark #panel-carga button {
+    background-color: #404d67 !important;
+    color: #fff !important;
+    border: none;
+}
+body.theme-dark #navbar {
+    background-color: #404d67 !important;
+}
+body.theme-dark #panel-carga details.sub-details > summary {
+    background: #404d67 !important;
+}
+/* Por defecto mantiene el fondo, pero se sobrescribe por tema */
+body.theme-corporate #navbar {
+    background-color: #a3c7e2 !important;
+}
+body.theme-minimalist #navbar {
+    background-color: #8eb987be !important;
+}
+/* En tema corporativo, fondo de botones desplegables igual al de la ficha */
+body.theme-corporate #panel-carga details.sub-details > summary {
+    background: #a3c7e2 !important;
+}
+
+/* En tema minimalista, fondo de botones desplegables igual al de la ficha */
+body.theme-minimalist #panel-carga details.sub-details > summary {
+    background: #8eb987be !important;
+}
+/* En tema oscuro, oscurecer el fondo de los botones desplegables del panel de carga */
+body.theme-dark #panel-carga details.sub-details > summary {
+    background: #23272e !important;
+}
+/* Forzar color negro en los botones desplegables del panel Cargar/Editar datos */
+.sub-details > summary {
+    color: #111 !important;
+}
+/* --- FONDOS AUDITOR: FORZADO --- */
+body.rol-auditor #auditor-col-right {
+    background-color: #f6fafd !important;
+}
+body.rol-auditor.theme-corporate #auditor-col-right {
+    background-color: #f6fafd !important;
+}
+body.rol-auditor.theme-minimalist #auditor-col-right {
+    background-color: #f7fbf6 !important;
+}
+body.rol-auditor.theme-dark #auditor-col-right {
+    background-color: #1a2332 !important;
+}
+
+body.rol-auditor #auditor-col-right table,
+body.rol-auditor #auditor-col-right .tabla-prestaciones {
+    background-color: #4bb3fd !important; /* CORPORATE: azul intenso */
+}
+body.rol-auditor.theme-corporate #auditor-col-right table,
+body.rol-auditor.theme-corporate #auditor-col-right .tabla-prestaciones {
+    background-color: #1976d2 !important; /* CORPORATE: azul MUY notorio */
+    color: #fff !important;
+}
+body.rol-auditor.theme-minimalist #auditor-col-right table,
+body.rol-auditor.theme-minimalist #auditor-col-right .tabla-prestaciones {
+    background-color: #43a047 !important; /* MINIMALIST: verde intenso */
+    color: #fff !important;
+}
+body.rol-auditor.theme-dark #auditor-col-right table,
+body.rol-auditor.theme-dark #auditor-col-right .tabla-prestaciones {
+    background-color: #0d253a !important; /* DARK: azul oscuro muy notorio */
+    color: #fff !important;
+}
+/* --- FIN FONDOS AUDITOR: FORZADO --- */
+/* --- FONDOS ESPECIALES AUDITOR: columna 2 e historial --- */
+body.rol-auditor #auditor-col-right {
+    /* Fondo suave según tema */
+    background: var(--auditor-col-bg, #f6fafd);
+    transition: background 0.3s;
+}
+body.rol-auditor.theme-corporate #auditor-col-right {
+    --auditor-col-bg: #f6fafd;
+}
+body.rol-auditor.theme-minimalist #auditor-col-right {
+    --auditor-col-bg: #f7fbf6;
+}
+body.rol-auditor.theme-dark #auditor-col-right {
+    --auditor-col-bg: #1a2332;
+}
+
+body.rol-auditor #auditor-col-right #lista-prestaciones table {
+    /* Fondo un poco más intenso, acorde al tema */
+    background: var(--auditor-table-bg, #e3f0fa);
+    border-radius: 10px;
+    transition: background 0.3s;
+}
+body.rol-auditor.theme-corporate #auditor-col-right #lista-prestaciones table {
+    --auditor-table-bg: #e3f0fa;
+}
+body.rol-auditor.theme-minimalist #auditor-col-right #lista-prestaciones table {
+    --auditor-table-bg: #e6f7e3;
+}
+body.rol-auditor.theme-dark #auditor-col-right #lista-prestaciones table {
+    --auditor-table-bg: #232e44;
+}
+/* --- FIN FONDOS ESPECIALES AUDITOR --- */
+
+/* --- FICHA PACIENTE MÁS PEQUEÑA SOLO PARA AUDITOR (proporcional, sin cortes) --- */
+body.rol-auditor #info-paciente .patient-card {
+    max-width: 630px; /* 700px * 0.9 */
+    font-size: 0.9em;
+    padding: 0 0 0 0;
+    margin: 16px auto;
+}
+body.rol-auditor #info-paciente .patient-card-header,
+body.rol-auditor #info-paciente .patient-card-footer {
+    padding-left: 29px !important; /* 32px * 0.9 */
+    padding-right: 29px !important;
+}
+body.rol-auditor #info-paciente .patient-card-header {
+    height: 81px; /* 90px * 0.9 */
+    padding-top: 0;
+    padding-bottom: 0;
+}
+body.rol-auditor #info-paciente .patient-card-grid-body {
+    padding-left: 29px;
+    padding-right: 29px;
+    padding-top: 25px;
+    gap: 0 29px;
+}
+body.rol-auditor #info-paciente .patient-name {
+    font-size: 1.305rem;
+}
+body.rol-auditor #info-paciente .patient-dni {
+    font-size: 0.945rem;
+}
+body.rol-auditor #info-paciente .grid-item {
+    font-size: 0.91rem;
+}
+body.rol-auditor #info-paciente .patient-card-footer .label,
+body.rol-auditor #info-paciente .patient-card-footer .value {
+    font-size: 0.91rem;
+}
+@media (max-width: 960px) {
+    body.rol-auditor #info-paciente .patient-card,
+    body.rol-auditor #info-paciente .patient-card-header,
+    body.rol-auditor #info-paciente .patient-card-footer,
+    body.rol-auditor #info-paciente .patient-card-grid-body {
+        max-width: none;
+        font-size: 1em;
+        padding-left: 10px;
+        padding-right: 10px;
+        gap: 0 10px;
+    }
+    body.rol-auditor #info-paciente .patient-card-header {
+        height: 90px;
+    }
+    body.rol-auditor #info-paciente .patient-name {
+        font-size: 1.45rem;
+    }
+    body.rol-auditor #info-paciente .patient-dni {
+        font-size: 1.05rem;
+    }
+    body.rol-auditor #info-paciente .grid-item,
+    body.rol-auditor #info-paciente .patient-card-footer .label,
+    body.rol-auditor #info-paciente .patient-card-footer .value {
+        font-size: 1.01rem;
+    }
+}
+/* --- FIN FICHA PACIENTE MÁS PEQUEÑA AUDITOR --- */
+/* --- VISTA ESPECIAL AUDITOR (Layout 2 columnas) --- */
+
+/* Por defecto (sin rol o rol no-auditor), las columnas se apilan verticalmente */
+.auditor-col {
+    min-width: 0; /* Para que flexbox pueda encoger */
+}
+
+
+/* Cuando el body tiene la clase 'rol-auditor' (aplica a todos los temas) */
+body.rol-auditor .container {
+    max-width: 95%;
+}
+body.rol-auditor #panel-busqueda {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 20px;
+    flex-basis: 100%;
+    flex-grow: 1;
+}
+body.rol-auditor #auditor-col-left {
+    flex-basis: calc(42.5% - 10px);
+    flex-grow: 1;
+    min-width: 320px;
+}
+body.rol-auditor #auditor-col-right {
+    flex-basis: calc(57.5% - 10px);
+    flex-grow: 1;
+    min-width: 400px;
+    height: 100%;
+    max-height: 70vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    /* Barra de desplazamiento solo para historial largo */
+    scrollbar-width: thin;
+    scrollbar-color: var(--primary-color, #375a7f) var(--panel-bg, #f8f9fa);
+    background: inherit;
+}
+body.rol-auditor #lista-prestaciones {
+    height: 100%;
+    margin-top: 0;
+}
+@media (max-width: 960px) {
+    body.rol-auditor #panel-busqueda {
+        flex-direction: column;
+        gap: 15px;
+        align-items: stretch;
+    }
+    body.rol-auditor #auditor-col-left,
+    body.rol-auditor #auditor-col-right {
+        flex-basis: 100%;
+        min-width: 100%;
+        max-height: none;
+        overflow: visible;
+    }
+}
+
+/* --- FIN VISTA ESPECIAL AUDITOR --- */
+/* Prestaciones en historial: cada prestación como ítem separado */
+.col-prestacion .prestacion-item {
+    display: block;
+    padding: 2px 0;
+    border-bottom: 1px dashed #eee;
+    font-size: 1em;
+    line-height: 1.3;
+}
+.col-prestacion .prestacion-item:last-child {
+    border-bottom: none;
+}
+/* Inputs dinámicos de prestación: layout flexible */
+.prestacion-input-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.btn-remove-prestacion {
+    background: none !important;
+    border: none !important;
+    color: var(--danger-color) !important;
+    font-size: 1.3em;
+    font-weight: 700;
+    padding: 0 8px !important;
+    line-height: 1;
+    cursor: pointer;
+    box-shadow: none !important;
+    opacity: 0.85;
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.btn-remove-prestacion:hover {
+    color: var(--danger-hover) !important;
+    opacity: 1;
+    background: none !important;
+    text-decoration: none;
+}
+/* Botón '+ Añadir prestación': solo texto, alineado a la derecha */
+.btn-add-linea {
+    background: none !important;
+    border: none !important;
+    color: var(--primary-color) !important;
+    font-weight: 500;
+    font-size: 1rem;
+    padding: 0 !important;
+    margin: 0 0 8px 0;
+    box-shadow: none !important;
+    cursor: pointer;
+    transition: color 0.2s;
+    text-align: right;
+    display: block;
+    float: right;
+}
+.btn-add-linea:hover {
+    color: var(--primary-hover) !important;
+    text-decoration: underline;
+    background: none !important;
+}
+.ver-ficha-link {
+    display: inline;
+    width: auto;
+    max-width: 100%;
+    padding: 0;
+    margin: 0;
+    background: none;
+    border: none;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.combo-prestador-btn {
+    position: absolute;
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    height: 20px;
+    width: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.combo-prestador-list {
+    display: none;
+    position: absolute;
+    left: 0; right: 0; top: 110%;
+    z-index: 10;
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 0 0 8px 8px;
+    max-height: 160px;
+    overflow-y: auto;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    margin: 0; padding: 0; list-style: none;
+}
+.combo-prestador-list li {
+    padding: 5px 10px;
+    cursor: pointer;
+    color: #222;
+    font-size: calc(1em - 2pt);
+    border-bottom: 1px solid #eee;
+    margin: 0;
+}
+.combo-prestador-list li:last-child { border-bottom: none; }
+.combo-prestador-list li:hover, .combo-prestador-list li.active {
+    background: var(--primary-color, #e0eaff);
+    color: #222;
+}
+/* Input con datalist y flecha visual */
+.input-datalist-arrow {
+    background-image: url('data:image/svg+xml;utf8,<svg fill="%23666" height="18" viewBox="0 0 24 24" width="18" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 18px 18px;
+    cursor: pointer;
+    padding-right: 36px !important;
+}
+/* Ajuste de padding para flecha en inputs de tabla */
+.tabla-prestaciones tr.editando .input-datalist-arrow {
+    padding-right: 28px !important;
+}
+/* === Tabla de historial de prestaciones === */
+.tabla-prestaciones {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin-top: 15px;
+    box-shadow: 0 2px 4px var(--shadow-color);
+    border-radius: 8px;
+    overflow: hidden;
+    table-layout: fixed;
+}
+.tabla-prestaciones th {
+    text-align: center;
+    vertical-align: middle;
+    font-weight: bold !important;
+    background-color: color-mix(in srgb, var(--bg-color) 50%, var(--panel-bg));
+    color: var(--text-color);
+    font-size: 12px;
+    padding: 2px 4px;
+    height: 24px;
+    line-height: 20px;
+}
+
+/* Centrar encabezados de la segunda y tercera columna */
+.tabla-prestaciones td {
+    background-color: var(--panel-bg);
+    color: var(--text-light);
+    font-size: 1.01rem;
+    padding: 12px 4px;
+    border: 1px solid var(--border-color);
+    vertical-align: middle;
+    overflow-wrap: break-word;
+}
+
+.tabla-prestaciones tr.editando td {
+    overflow: visible;
+    position: relative;
+}
+
+.tabla-prestaciones .col-fecha {
+    width: 140px;
+    min-width: 120px;
+    max-width: 170px;
+    text-align: center;
+    padding-left: 4px;
+    padding-right: 4px;
+    transition: width 0.2s;
+}
+.tabla-prestaciones .col-prestador {
+    width: 120px;
+    min-width: 90px;
+    max-width: 140px;
+    text-align: left;
+    padding-left: 8px;
+    padding-right: 4px;
+    font-weight: 500;
+    color: var(--text-color);
+    transition: width 0.2s;
+}
+/* Modo edición de fila en tabla de prestaciones */
+.tabla-prestaciones tr.editando .col-fecha {
+    width: 140px;
+    min-width: 120px;
+    max-width: 170px;
+}
+.tabla-prestaciones tr.editando .col-prestador {
+    width: 120px;
+    min-width: 90px;
+    max-width: 140px;
+}
+.tabla-prestaciones tr.editando input[type="text"],
+.tabla-prestaciones tr.editando input[type="date"],
+.tabla-prestaciones tr.editando select {
+    width: 100%;
+    max-width: 100%;
+    padding: 5px 8px;
+    border: 1.5px solid var(--primary-color);
+    border-radius: 7px;
+    font-size: 0.85rem;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    letter-spacing: -0.02em;
+    background: color-mix(in srgb, var(--panel-bg) 90%, var(--primary-color) 2%);
+    color: var(--text-color);
+    box-shadow: 0 2px 8px 0 rgba(0,0,0,0.07);
+    outline: none;
+    transition: border 0.18s, box-shadow 0.18s;
+    box-sizing: border-box;
+}
+.tabla-prestaciones tr.editando input[type="text"]:focus,
+.tabla-prestaciones tr.editando input[type="date"]:focus,
+.tabla-prestaciones tr.editando select:focus {
+    border-color: var(--primary-hover);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary-color) 20%, transparent);
+}
+.tabla-prestaciones tr.editando select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(135deg, #ccc 25%, transparent 25%);
+    background-position: right 10px top 50%, right 15px top 50%;
+    background-size: 5px 5px;
+    background-repeat: no-repeat;
+    padding-right: 24px;
+    position: relative;
+    z-index: 1000;
+}
+
+.tabla-prestaciones tr.editando select option {
+    padding: 6px 10px;
+    font-size: 0.85rem;
+}
+
+/* Forzar que el desplegable se extienda más allá de la tabla */
+.tabla-prestaciones tr.editando .col-prestador {
+    overflow: visible !important;
+    z-index: 1001;
+}
+
+.tabla-prestaciones tr.editando select:focus {
+    z-index: 1002;
+}
+.tabla-prestaciones tr.editando input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(0.4) sepia(1) saturate(3) hue-rotate(180deg);
+}
+.tabla-prestaciones tr.editando input[type="date"] {
+    min-width: 110px;
+    max-width: 180px;
+    font-size: 0.85rem;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    letter-spacing: -0.03em;
+}
+.tabla-prestaciones tr.editando .icon-btn-prestacion {
+    margin: 0 2px;
+}
+.tabla-prestaciones tr.editando .icon-btn-prestacion svg path {
+    stroke: var(--primary-color);
+    fill: var(--primary-color);
+}
+.tabla-prestaciones tr.editando .icon-btn-prestacion:hover svg path {
+    stroke: var(--primary-hover);
+    fill: var(--primary-hover);
+}
+.tabla-prestaciones .col-prestacion {
+    min-width: 180px;
+    max-width: 999px;
+    width: auto;
+    text-align: left;
+    padding-left: 8px;
+    padding-right: 4px;
+    color: var(--text-light);
+}
+.tabla-prestaciones .col-acciones {
+    width: 70px;
+    min-width: 60px;
+    max-width: 80px;
+    text-align: center;
+    padding-left: 0;
+    padding-right: 0;
+}
+.tabla-prestaciones .icon-btn-prestacion {
+    background: none !important;
+    border: none;
+    border-radius: 0;
+    width: 28px;
+    height: 28px;
+    min-width: 0;
+    min-height: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: none;
+    margin: 0 2.5px;
+    padding: 0;
+    outline: none;
+    vertical-align: middle;
+    transition: background 0.15s;
+}
+.tabla-prestaciones .icon-btn-prestacion svg {
+    display: inline;
+    pointer-events: none;
+    vertical-align: middle;
+}
+.tabla-prestaciones .icon-btn-editar-prestacion svg path {
+    stroke: #1976d2;
+    fill: #1976d2;
+}
+.tabla-prestaciones .icon-btn-editar-prestacion:hover svg path {
+    stroke: #0056b3;
+    fill: #0056b3;
+}
+.tabla-prestaciones .icon-btn-eliminar-prestacion svg circle {
+    fill: #dc3545;
+}
+.tabla-prestaciones .icon-btn-eliminar-prestacion:hover svg circle {
+    fill: #c82333;
+}
+.tabla-prestaciones .icon-btn-prestacion:focus {
+    outline: 2px solid var(--primary-color);
+}
+.tabla-prestaciones .icon-btn-prestacion:active {
+    filter: brightness(0.95);
+}
+.tabla-prestaciones .icon-btn-prestacion + .icon-btn-prestacion {
+    margin-left: 5px;
+}
+/* Footer de acciones: link y eliminar alineados */
+.patient-card-footer-actions .footer-actions-row {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 8px;
+    gap: 12px;
+}
+.patient-card-footer-actions .footer-link {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+.patient-card-footer-actions .footer-delete {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+}
+.patient-card-footer-actions .icon-btn-eliminar {
+    position: static;
+    top: auto;
+    right: auto;
+    left: auto;
+    transform: none;
+    margin-left: 12px;
+}
+/* Modal de confirmación de edición de prestación */
+.modal-botones-container {
+    display: flex;
+    justify-content: flex-end;
+    gap: 15px;
+    margin-top: 25px;
+    width: 100%;
+}
+
+
+/* Solo para el modal de confirmación de eliminación de prestación */
+.modal-confirmacion-eliminar-prestacion .modal-botones-container button {
+    width: auto;
+    padding: 10px 20px;
+    font-weight: 600;
+    border-radius: 8px;
+    font-size: 1rem;
+    border: 1.5px solid transparent;
+    transition: background 0.18s, color 0.18s, border 0.18s;
+}
+.modal-confirmacion-eliminar-prestacion button.boton-aceptar {
+    background-color: var(--primary-color);
+    color: #fff;
+    border-color: var(--primary-color);
+}
+.modal-confirmacion-eliminar-prestacion button.boton-aceptar:hover {
+    background-color: var(--primary-hover);
+    border-color: var(--primary-hover);
+    color: #fff;
+}
+.modal-confirmacion-eliminar-prestacion button.boton-cancelar {
+    background-color: var(--danger-color);
+    color: #fff;
+    border-color: var(--danger-color);
+}
+.modal-confirmacion-eliminar-prestacion button.boton-cancelar:hover {
+    background-color: var(--danger-hover);
+    border-color: var(--danger-hover);
+    color: #fff;
+}
+.modal-confirmacion-eliminar-prestacion .modal-content {
+    background: var(--panel-bg);
+    color: var(--text-color);
+    border: 1.5px solid var(--primary-color);
+    box-shadow: 0 5px 15px var(--shadow-color);
+}
+body.theme-minimalist .modal-confirmacion-eliminar-prestacion .modal-content {
+    border-color: var(--primary-color);
+}
+body.theme-dark .modal-confirmacion-eliminar-prestacion .modal-content {
+    border-color: var(--primary-color);
+}
+
+/* Fin estilos específicos para confirmación de eliminación de prestación */
+
+/* Restaurar estilos originales para otros modales */
+.modal-botones-container button {
+    width: auto;
+    padding: 10px 20px;
+    font-weight: 600;
+}
+button.boton-aceptar {
+    background-color: var(--exito-bg);
+    color: var(--exito-fg);
+    border: 1px solid var(--exito-fg);
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.2s;
+}
+button.boton-aceptar:hover {
+    background-color: var(--exito-fg);
+    color: var(--exito-bg);
+}
+button.boton-cancelar {
+    background-color: var(--error-bg);
+    color: var(--error-fg);
+    border: 1px solid var(--error-fg);
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.2s;
+}
+button.boton-cancelar:hover {
+    background-color: var(--error-fg);
+    color: var(--error-bg);
+}
+
+.modal-content {
+    background: var(--panel-bg);
+    padding: 30px;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    border: 1px solid var(--border-color);
+}
+/* Placeholder de input de búsqueda en editar paciente */
+#input-buscar-editar::placeholder {
+    font-size: 0.95rem;
+    color: #888;
+    opacity: 1;
+}
+/* Botones colapsables del panel de carga: altura reducida y fondo sutil */
+.sub-details > summary {
+    padding: 2px 12px !important;
+    line-height: 1.05 !important;
+    font-size: 0.95rem !important;
+    border-radius: 8px 8px 0 0;
+    background: var(--btn-cargar-bg, #eaf3fb);
+    color: var(--btn-cargar-fg, #1976d2);
+    margin-bottom: 0;
+    transition: background 0.2s, color 0.2s;
+}
+/* Forzar color negro en los summary del panel de carga, todos los temas */
+#panel-carga details.sub-details > summary {
+    color: #111 !important;
+}
+/* Listado de pacientes: separación y adaptación a tema */
+.listado-pacientes {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.listado-pacientes li {
+    margin-bottom: 2px;
+}
+/* Botones de resultados de búsqueda: fondo claro y texto oscuro */
+.listado-pacientes button {
+    width: 100%;
+    display: block;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 6px 16px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s, border 0.2s;
+    margin: 0;
+    background: var(--listado-bg, #e3f0fd);
+    color: var(--listado-fg, #222);
+}
+.listado-pacientes button:hover {
+    background: var(--listado-bg-hover, #cbe3fa);
+    border-color: var(--primary-color);
+}
+body.theme-corporate {
+    --listado-bg: #e3f0fd;
+    --listado-bg-hover: #cbe3fa;
+    --listado-fg: #222;
+}
+body.theme-minimalist {
+    --listado-bg: #e6f7ea;
+    --listado-bg-hover: #c8ecd3;
+    --listado-fg: #222;
+}
+body.theme-dark {
+    --listado-bg: #2d333b;
+    --listado-bg-hover: #22272e;
+    --listado-fg: #cdd9e5;
+}
+
+/* Botones de buscar y limpiar: solo icono, sin fondo, borde visible */
+#btn-buscar, #btn-limpiar-busqueda {
+    background: var(--btn-busq-bg, #f4f7f6) !important;
+    border: 1.5px solid var(--primary-color);
+    color: var(--primary-color);
+    padding: 7.6px 11.4px;
+    border-radius: 7.6px;
+    min-width: 38px;
+    min-height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.235rem;
+    box-shadow: none;
+    transition: border 0.2s, color 0.2s, background 0.2s;
+}
+#btn-buscar:hover, #btn-limpiar-busqueda:hover {
+    border-color: var(--primary-hover);
+    color: var(--primary-hover);
+    background: color-mix(in srgb, var(--primary-color) 10%, var(--btn-busq-bg, #f4f7f6));
+}
+body.theme-corporate {
+    --btn-busq-bg: #eaf3fb;
+}
+body.theme-minimalist {
+    --btn-busq-bg: #eafbee;
+}
+body.theme-dark {
+    --btn-busq-bg: #23272e;
+}
+#btn-buscar:hover, #btn-limpiar-busqueda:hover {
+    border-color: var(--primary-hover);
+    color: var(--primary-hover);
+    background: color-mix(in srgb, var(--primary-color) 10%, transparent);
+}
+body.theme-corporate {
+    --listado-bg: #1976d2;
+    --listado-bg-hover: #1565c0;
+    --listado-fg: #fff;
+}
+body.theme-minimalist {
+    --listado-bg: #388e3c;
+    --listado-bg-hover: #2e7031;
+    --listado-fg: #fff;
+}
+body.theme-dark {
+    --listado-bg: #333;
+    --listado-bg-hover: #222;
+    --listado-fg: #fff;
+}
+/* === Definición de temas y variables CSS === */
+
+/* Tema 1: Corporativo (Default) */
+:root {
+    --bg-color: #f4f7f6;
+    --panel-bg: #ffffff;
+    --text-color: #333333;
+    --text-light: #555555;
+    --border-color: #e0e0e0;
+    --shadow-color: rgba(0, 0, 0, 0.08);
+    --primary-color: #007bff;
+    --primary-hover: #0056b3;
+    --danger-color: #dc3545;
+    --danger-hover: #c82333;
+    --warn-color: #ffc107;
+    --warn-hover: #e0a800;
+    --exito-bg: #d4edda;
+    --exito-fg: #155724;
+    --error-bg: #f8d7da;
+    --error-fg: #721c24;
+    /* Color de fondo para la tarjeta del paciente (ligeramente más oscuro que el panel) */
+    --card-bg: color-mix(in srgb, var(--panel-bg) 85%, #000 5%);
+    --card-text-color: var(--text-color);
+    --color-dni-bg: #e3f0fd;
+    --color-dni-fg: #1976d2;
+}
+
+/* Tema 2: Minimalista (Verde) */
+body.theme-minimalist {
+    --bg-color: #fdfdfd;
+    --panel-bg: #ffffff;
+    --text-color: #222222;
+    --text-light: #444444;
+    --border-color: #f0f0f0;
+    --shadow-color: rgba(0, 0, 0, 0.05);
+    --primary-color: #28a745;
+    --primary-hover: #218838;
+    --danger-color: #dc3545;
+    --danger-hover: #c82333;
+    --warn-color: #ffc107;
+    --warn-hover: #e0a800;
+    --exito-bg: #d4edda;
+    --exito-fg: #155724;
+    --error-bg: #f8d7da;
+    --error-fg: #721c24;
+    --color-dni-bg: #e6f7ea;
+    --color-dni-fg: #2e7d32;
+}
+
+/* Tema 3: Oscuro */
+body.theme-dark {
+    --bg-color: #22272e;
+    --panel-bg: #2d333b;
+    --text-color: #cdd9e5;
+    --text-light: #a0aec0;
+    --border-color: #444c56;
+    --shadow-color: rgba(0, 0, 0, 0.2);
+    --primary-color: #388bfd;
+    --primary-hover: #58a6ff;
+    --danger-color: #f85149;
+    --danger-hover: #da3633;
+    --warn-color: #e3b341;
+    --warn-hover: #f0c65c;
+    --exito-bg: #2d5a2d;
+    --exito-fg: #a8e6a8;
+    --error-bg: #5a2d2d;
+    --error-fg: #e6a8a8;
+    --color-dni-bg: #2a3544;
+    --color-dni-fg: #8ab4f8;
+}
+/* Cursor: flecha por defecto, 'I' solo en campos de texto */
+body, *:not(input):not(textarea):not([contenteditable="true"]):active, *:not(input):not(textarea):not([contenteditable="true"]):focus {
+    cursor: default !important; /* Cursor de flecha por defecto para todo, incluso al hacer clic */
+}
+
+/* Cursor de texto solo para inputs y textareas */
+input[type="text"],
+input[type="password"],
+input[type="email"],
+input[type="number"],
+input[type="search"],
+input[type="date"],
+textarea,
+[contenteditable="true"] {
+    cursor: text !important; /* Cursor 'I' solo para campos de texto y contenteditable */
+    -webkit-user-select: auto;
+    -moz-user-select: auto;
+    -ms-user-select: auto;
+    user-select: auto;
+}
+
+/* Cursor de 'mano' para elementos clickeables que no son inputs */
+button,
+summary, /* Para los <details> */
+a,
+select,
+input[type="file"] {
+    cursor: pointer; /* Cursor de 'mano' */
+}
+
+/* === Estilos base === */
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    margin: 0;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    transition: background-color 0.2s, color 0.2s;
+    -webkit-user-select: none; /* Safari */
+    -moz-user-select: none;    /* Firefox */
+    -ms-user-select: none;     /* IE/Edge */
+    user-select: none;         /* Estándar */
+}
+
+h1, h2, h3, h4 {
+    color: var(--text-color);
+    font-weight: 600;
+}
+
+h1 {
+    font-size: 1.5rem;
+}
+
+h2 {
+    font-size: 1.25rem;
+    border-bottom: 2px solid var(--primary-color);
+    padding-bottom: 8px;
+    margin-top: 0;
+}
+
+h3 {
+    font-size: 1.1rem;
+    margin-top: 0;
+}
+
+hr {
+    border: none;
+    border-top: 1px solid var(--border-color);
+    margin: 30px 0;
+}
+
+small {
+    color: var(--text-light);
+}
+
+a {
+    color: var(--primary-color);
+    text-decoration: none;
+}
+a:hover {
+    text-decoration: underline;
+}
+
+/* --- 3. ESTRUCTURA Y PANELES --- */
+
+.container {
+    display: flex;
+    flex-wrap: wrap; /* Permite que los paneles se reorganicen */
+    gap: 20px;
+    padding: 20px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.panel {
+    flex: 1 1 400px; /* Flex-grow, flex-shrink, flex-basis */
+    background: var(--panel-bg);
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px var(--shadow-color);
+    border: 1px solid var(--border-color);
+    transition: background-color 0.2s, border-color 0.2s;
+}
+
+/* Panel de búsqueda principal (más grande) */
+#panel-busqueda {
+    flex-basis: 600px;
+}
+
+/* Paneles colapsables */
+details {
+    flex: 1 1 400px;
+    background: var(--panel-bg);
+    border-radius: 12px;
+    box-shadow: 0 4px 12px var(--shadow-color);
+    border: 1px solid var(--border-color);
+    transition: background-color 0.2s, border-color 0.2s;
+    overflow: hidden; /* Evita que el contenido se salga */
+}
+details > summary {
+    padding: 20px 25px;
+    cursor: pointer;
+    font-size: 1.25rem;
+    font-weight: 600;
+    list-style: none; /* Oculta el triángulo por defecto */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+details > summary::after {
+    /* Indicador de flecha personalizado */
+    content: '▼';
+    font-size: 0.8rem;
+    transition: transform 0.2s;
+}
+details[open] > summary::after {
+    transform: rotate(180deg);
+}
+details[open] > summary {
+    border-bottom: 1px solid var(--border-color);
+}
+.details-content {
+    padding: 25px;
+}
+
+/* === Barra de navegación (navbar) === */
+
+#navbar {
+    width: 100%;
+    background-color: var(--panel-bg);
+    padding: 15px 25px;
+    box-sizing: border-box;
+    color: var(--text-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-color);
+    box-shadow: 0 2px 5px var(--shadow-color);
+}
+#navbar h1 {
+    margin: 0;
+    color: var(--primary-color);
+}
+#navbar-user {
+    font-weight: bold;
+    color: var(--text-light);
+    margin-right: 15px;
+}
+
+/* Contenedor de botones de navbar */
+#navbar-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Selector de tema visual */
+#theme-switcher {
+    display: flex;
+    gap: 5px;
+    margin-right: 15px;
+}
+.theme-btn {
+    width: 20px;
+    height: 20px;
+    border: 1px solid var(--border-color);
+    border-radius: 50%;
+    cursor: pointer;
+    padding: 0;
+}
+#theme-corporate { background-color: #007bff; }
+#theme-minimalist { background-color: #28a745; }
+#theme-dark { background-color: #22272e; border-color: #555; }
+
+
+/* === Botones y formularios === */
+
+button {
+    padding: 12px 18px;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: background-color 0.2s, transform 0.1s;
+}
+button:hover {
+    background-color: var(--primary-hover);
+}
+button:active {
+    transform: scale(0.98);
+}
+
+/* Botón de logout */
+#btn-logout {
+    background-color: var(--text-light);
+    padding: 8px 12px;
+}
+#btn-logout:hover {
+    background-color: var(--text-color);
+}
+
+/* Botones de eliminar y resetear */
+.btn-eliminar {
+    background-color: var(--danger-color);
+    font-size: 0.8rem;
+    padding: 6px 10px;
+}
+.btn-eliminar:hover {
+    background-color: var(--danger-hover);
+}
+.btn-reset-pass {
+    background-color: var(--warn-color);
+    color: #333;
+}
+.btn-reset-pass:hover {
+    background-color: var(--warn-hover);
+}
+#btn-eliminar-paciente {
+    background-color: var(--danger-color);
+    margin-top: 15px;
+}
+#btn-eliminar-paciente:hover {
+    background-color: var(--danger-hover);
+}
+
+/* Formularios generales */
+.form-group {
+    margin-bottom: 15px;
+}
+.form-group label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 600;
+    color: var(--text-light);
+}
+.form-group input, .form-group select {
+    width: 100%;
+    padding: 12px;
+    box-sizing: border-box;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+/* Textareas: ancho igual que inputs, solo redimension vertical */
+.form-group textarea {
+    width: 100%;
+    padding: 12px;
+    box-sizing: border-box;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    transition: border-color 0.2s, box-shadow 0.2s;
+    min-height: 80px; /* altura por defecto */
+    resize: vertical; /* solo vertical */
+}
+.form-group input[type="file"] {
+    padding: 8px;
+}
+.form-group input:focus, .form-group select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary-color) 20%, transparent);
+}
+
+/* Quitar flechas de selects específicos */
+select.select-sin-flecha {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: none;
+    padding-right: 12px; /* Sin espacio extra para flecha */
+}
+
+/* Color gris para texto cuando el select está vacío (clase agregada por JS) */
+select.select-sin-flecha.vacio {
+    color: #999; /* Mismo gris que placeholder */
+}
+
+/* Input number: ocultar spinners nativos */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+input[type="number"] {
+    -moz-appearance: textfield; /* Firefox */
+    appearance: textfield; /* Estándar */
+}
+
+/* Formulario de búsqueda principal */
+#search-form {
+    display: flex;
+    gap: 10px;
+}
+#search-query {
+    flex: 1; /* Ocupa el espacio disponible */
+}
+#btn-buscar {
+    flex-shrink: 0; /* No se achica */
+    align-self: end;
+    margin-left: 8px;
+}
+
+/* Ajustes movidos desde HTML */
+#search-form { margin-bottom: 0; }
+.search-inline { flex: 1; display: flex; align-items: center; }
+.search-inline label { margin-right: 8px; }
+#search-query { min-width: 0; }
+#btn-limpiar-busqueda { align-self: end; margin-left: 6px; }
+
+/* Texto informativo sobre búsqueda por DNI */
+#info-busqueda-dni {
+    font-size: 0.75em;
+    color: #888;
+    margin: 0 0 6px 0;
+    display: block;
+    text-align: center;
+}
+#info-busqueda-dni-editar {
+    font-size: 0.75em;
+    color: #888;
+    margin: 16px 0 6px 0;
+    display: block;
+    text-align: center;
+}
+
+/* Panel de carga oculto por defecto (solo admins) */
+#panel-carga { display: none; }
+
+/* Detalles de administración: oculto por defecto */
+#details-admin { display: none; }
+
+/* Solo se muestran para administrativos */
+body.rol-administrativo #panel-carga {
+    display: block !important;
+}
+
+body.rol-administrativo #details-admin {
+    display: block !important;
+}
+
+/* Los auditores NO los ven (refuerzo) */
+body.rol-auditor #panel-carga {
+    display: none !important;
+}
+
+body.rol-auditor #details-admin {
+    display: none !important;
+}
+
+/* Título dentro del panel admin */
+#panel-admin-usuarios h3 { margin-top: 30px; border-top: 1px solid var(--border-color); padding-top: 20px; }
+
+/* Selección del rol (tabla admin) */
+.select-rol { width: 100%; }
+.admin-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+/* Formulario editar paciente */
+#form-editar-paciente { margin-top: 18px; }
+
+
+/* === Tablas y resultados === */
+
+.results-area {
+    margin-top: 25px;
+    border-top: 1px solid var(--border-color);
+    padding-top: 25px;
+}
+
+/* Ocultar el encabezado 'Resultados' dentro del área de resultados */
+.results-area > h3 { display: none; }
+
+/* Tarjeta del paciente: títulos y valores en una sola línea */
+.patient-card .patient-col p {
+    margin: 6px 0;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+}
+.patient-card .patient-col p strong {
+    display: inline-block;
+    width: 120px; /* etiqueta con ancho fijo, valor cercano a la izquierda */
+    color: var(--text-light);
+    font-weight: 700;
+}
+
+/* Tablas generales */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+    box-shadow: 0 2px 4px var(--shadow-color);
+    border-radius: 8px;
+    overflow: hidden;
+}
+th, td {
+    border: 1px solid var(--border-color);
+    padding: 12px;
+    text-align: left;
+    color: var(--text-light);
+}
+th {
+    background-color: color-mix(in srgb, var(--bg-color) 50%, var(--panel-bg));
+    color: var(--text-color);
+    font-weight: 600;
+}
+td {
+    background-color: var(--panel-bg);
+}
+
+
+/* === Otros componentes === */
+
+/* Alertas generales */
+.alerta {
+    padding: 12px;
+    margin-top: 15px;
+    border-radius: 8px;
+    font-weight: 600;
+    border: 1px solid transparent;
+}
+.alerta.exito {
+    background-color: color-mix(in srgb, var(--primary-color) 15%, transparent);
+    color: var(--primary-hover);
+    border-color: var(--primary-color);
+}
+.alerta.error {
+    background-color: color-mix(in srgb, var(--danger-color) 15%, transparent);
+    color: var(--danger-hover);
+    border-color: var(--danger-color);
+}
+
+/* Login y registro */
+.login-container {
+    width: 100%;
+    max-width: 420px;
+    margin: 50px auto;
+    background: var(--panel-bg);
+    padding: 35px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px var(--shadow-color);
+    border: 1px solid var(--border-color);
+}
+.login-container h2 {
+    text-align: center;
+    margin-top: 0;
+    margin-bottom: 25px;
+    color: var(--primary-color);
+}
+.login-footer {
+    text-align: center;
+    margin-top: 20px;
+    font-size: 14px;
+}
+.login-container button {
+    width: 100%;
+}
+
+/* Modal de cambio de contraseña */
+.modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.6);
+    display: none; 
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    transition: opacity 0.2s ease-in-out;
+}
+
+.modal-content {
+    background: var(--panel-bg);
+    color: var(--text-color);
+    padding: 25px;
+    border-radius: 12px;
+    min-width: 320px;
+    max-width: 500px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    transition: all 0.3s ease-in-out;
+}
+
+.modal-content button {
+    width: 100%;
+}
+
+/* Estilos consistentes para todos los modales según tema */
+.modal-content h2 {
+    color: var(--text-color);
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.modal-content p {
+    color: var(--text-color);
+    margin-bottom: 20px;
+    line-height: 1.6;
+}
+
+.modal-botones-container {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 20px;
+}
+
+.modal-botones-container button {
+    width: auto;
+    min-width: 100px;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 500;
+    transition: all 0.2s ease-in-out;
+    border: none;
+}
+
+.boton-aceptar {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.boton-aceptar:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+}
+
+.boton-cancelar {
+    background-color: var(--border-color);
+    color: var(--text-color);
+}
+
+.boton-cancelar:hover {
+    background-color: var(--text-light);
+}
+
+/* Adaptación de modales a temas */
+body.theme-corporate .modal-content {
+    background: var(--panel-bg);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+}
+
+body.theme-corporate .boton-aceptar {
+    background-color: #1976d2;
+}
+
+body.theme-corporate .boton-cancelar {
+    background-color: #e0e0e0;
+    color: #333;
+}
+
+body.theme-minimalist .modal-content {
+    background: var(--panel-bg);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+}
+
+body.theme-minimalist .boton-aceptar {
+    background-color: #4caf50;
+}
+
+body.theme-minimalist .boton-cancelar {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+}
+
+body.theme-dark .modal-content {
+    background: var(--panel-bg);
+    color: var(--text-color);
+    border: 1px solid #444;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+}
+
+body.theme-dark .modal-content h2 {
+    color: #e0e0e0;
+}
+
+body.theme-dark .modal-content p {
+    color: #b0b0b0;
+}
+
+body.theme-dark .boton-aceptar {
+    background-color: #1976d2;
+}
+
+body.theme-dark .boton-cancelar {
+    background-color: #424242;
+    color: #e0e0e0;
+}
+
+body.theme-dark .boton-cancelar:hover {
+    background-color: #616161;
+}
+
+/* === Estilos para temas - Modal de Alternativas === */
+body.theme-minimalist #modal-alternativas-busqueda .modal-confirmacion-content {
+    background: var(--panel-bg);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+}
+
+body.theme-minimalist #modal-alternativas-busqueda .alternativa-item {
+    background-color: var(--bg-color);
+    border-left: 4px solid #4caf50;
+}
+
+body.theme-minimalist #modal-confirmacion-busqueda .modal-confirmacion-content {
+    background: var(--panel-bg);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+}
+
+body.theme-dark #modal-alternativas-busqueda .modal-confirmacion-content {
+    background: var(--panel-bg);
+    color: var(--text-color);
+    border: 1px solid #444;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+}
+
+body.theme-dark #modal-alternativas-busqueda .modal-confirmacion-content h3 {
+    color: #e0e0e0;
+}
+
+body.theme-dark #modal-alternativas-busqueda .modal-confirmacion-content p {
+    color: #b0b0b0;
+}
+
+body.theme-dark #modal-alternativas-busqueda .alternativa-item {
+    background-color: #2a2a2a;
+    border-left: 4px solid #1976d2;
+}
+
+body.theme-dark #modal-confirmacion-busqueda .modal-confirmacion-content {
+    background: var(--panel-bg);
+    color: var(--text-color);
+    border: 1px solid #444;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+}
+
+body.theme-dark #modal-confirmacion-busqueda .modal-confirmacion-content h3 {
+    color: #e0e0e0;
+}
+
+body.theme-dark #modal-confirmacion-busqueda .resumen-filtros {
+    background-color: #2a2a2a;
+    border-left: 4px solid #1976d2;
+}
+
+/* Códigos de registro */
+
+.code-display-container {
+    display: flex;
+    gap: 20px; /* Espacio entre los códigos */
+    margin-top: 10px;
+    margin-bottom: 10px;
+    background-color: var(--bg-color);
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+.code-display-item {
+    flex: 1;
+}
+.code-display-item strong {
+    color: var(--text-light);
+    display: block;
+    margin-bottom: 5px;
+    font-size: 0.9rem;
+}
+.code-display-item span {
+    font-weight: 600;
+    font-family: 'Courier New', Courier, monospace;
+    color: var(--primary-color);
+    font-size: 1.1rem;
+}
+/* Sub-paneles */
+.sub-details {
+    background-color: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    margin-bottom: 15px;
+}
+.sub-details:last-child {
+    margin-bottom: 0;
+}
+.sub-details > summary {
+    padding: 15px;
+    font-weight: 600;
+    font-size: 1rem;
+}
+.sub-details[open] > summary {
+    border-bottom: 1px solid var(--border-color);
+}
+.sub-details-content {
+    padding: 20px;
+}
+.details-content > h2 {
+    /* Ocultamos los H2 que estaban antes, ahora usamos los summary */
+    display: none;
+}
+.details-content > hr {
+    /* Ocultamos el HR que separaba, ahora usamos los <details> */
+    display: none;
+}
+
+/* Patient card / carnet style */
+
+/* Ficha paciente (patient-card) */
+.patient-card {
+    max-width: 700px;
+    margin: 18px auto;
+    background: var(--card-bg);
+    border-radius: 14px;
+    box-shadow: 0 6px 18px rgba(20,30,50,0.12);
+    padding: 0 0 0 0;
+    font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    color: var(--card-text-color, #0b2545);
+    border: 1px solid rgba(11,37,69,0.08);
+    position: relative;
+    overflow: hidden;
+    background: var(--card-bg, #fff);
+}
+
+/* Tema corporativo: fondo azul suave */
+body.theme-corporate .patient-card {
+    --card-bg: #a3c7e2; /* Cambia este valor para ajustar el azul */
+}
+
+/* Tema minimalista: fondo verde suave */
+body.theme-minimalist .patient-card {
+    --card-bg: #8eb987be; /* Cambia este valor para ajustar el verde */
+}
+
+/* Tema oscuro: fondo igual, pero fuentes blancas en los campos de la ficha */
+body.theme-dark .patient-card {
+    --card-bg: #404d67;
+    --card-text-color: #fff;
+}
+body.theme-dark .patient-card .label {
+    color: #b0b0b0 !important;
+}
+body.theme-dark .patient-card .value,
+body.theme-dark .patient-card .patient-name,
+body.theme-dark .patient-card .patient-dni {
+    color: #fff !important;
+}
+.patient-card-header {
+    padding: 0 32px 0 32px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    border-bottom: none;
+    height: 90px;
+    justify-content: space-between;
+    position: relative;
+    box-sizing: border-box;
+}
+
+.patient-card-logo-container {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    margin-left: 16px;
+    flex: 0 0 auto;
+    max-height: 100%;
+}
+
+.patient-card-logo {
+    height: 100%;
+    max-height: 90px;
+    width: auto;
+    object-fit: contain;
+    object-position: right center;
+    display: block;
+    max-width: 160px;
+    /* Ajusta el max-width según el espacio disponible */
+    user-select: none;
+    pointer-events: none;
+    background: none;
+    border: none;
+    box-shadow: none;
+}
+
+@media (max-width: 760px) {
+    .patient-card-logo {
+        max-height: 60px;
+        max-width: 90px;
+    }
+    .patient-card-logo-container {
+        margin-left: 8px;
+    }
+}
+
+/* Icono eliminar paciente (cesto de basura) */
+.icon-btn-eliminar {
+    position: absolute;
+    top: 50%;
+    right: 32px;
+    transform: translateY(-50%);
+    background: none !important;
+    border: none;
+    border-radius: 0;
+    width: auto;
+    height: auto;
+    min-width: 0;
+    min-height: 0;
+    display: inline;
+    align-items: unset;
+    justify-content: unset;
+    cursor: pointer;
+    box-shadow: none;
+    transition: none;
+    z-index: 3;
+    padding: 0;
+    outline: none;
+}
+.icon-btn-eliminar:hover {
+    background: none !important;
+    box-shadow: none;
+}
+.icon-btn-eliminar svg {
+    display: inline;
+    pointer-events: none;
+    vertical-align: middle;
+}
+
+.patient-card-header-separator {
+    width: 100%;
+    border: none;
+    border-top: 2px solid var(--border-color);
+    margin: 22px 0 0 0;
+    padding: 0;
+}
+.patient-card-title {
+    display: inline-block;
+    flex-direction: column;
+    align-items: flex-start;
+    position: relative;
+}
+.patient-name {
+    font-size: 1.45rem;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+    color: var(--text-color);
+    margin-bottom: 2px;
+    text-align: left;
+    display: block;
+    position: relative;
+}
+.patient-dni {
+    font-size: 1.05rem;
+    color: #375a7f;
+    background: none;
+    border-radius: 0;
+    padding: 0;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    margin-bottom: 0;
+    margin-top: 0;
+    text-align: left;
+    text-transform: uppercase;
+    display: block;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    min-width: max-content;
+    top: 100%;
+}
+
+/* Grid de 2 columnas en ficha paciente */
+.patient-card-grid-body {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 32px;
+    padding: 28px 32px 0 32px;
+    margin-bottom: 0;
+}
+.grid-item {
+    margin-bottom: 12px;
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    font-size: 1.01rem;
+    line-height: 1.35;
+    white-space: normal;
+    word-break: break-word;
+}
+.grid-item .label {
+    color: #888;
+    font-weight: 600;
+    margin-right: 4px;
+    flex: 0 0 auto;
+    white-space: nowrap;
+}
+.grid-item .value {
+    color: #111;
+    font-weight: 500;
+    flex: 1 1 0%;
+    white-space: normal;
+    word-break: break-word;
+    font-style: normal;
+}
+
+/* Footer: observaciones y ficha */
+.patient-card-footer {
+    margin-top: 18px;
+    border-top: 2px solid var(--border-color);
+    padding: 18px 32px 18px 32px;
+    background: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+.patient-card-footer .divider-top {
+    border: none;
+    margin: 0 0 12px 0;
+    padding: 0;
+}
+.patient-card-footer .label {
+    color: #888;
+    font-weight: 600;
+    font-size: 1.01rem;
+    margin-bottom: 2px;
+    display: block;
+}
+.patient-card-footer .value {
+    color: #111;
+    font-style: normal;
+    font-size: 1.01rem;
+    margin-bottom: 10px;
+    margin-top: 0;
+    display: block;
+    white-space: pre-line;
+    word-break: break-word;
+    font-weight: 500;
+}
+.patient-card-footer .value:empty {
+    display: none;
+}
+.patient-card-footer .ver-ficha-link {
+    color: var(--primary-color);
+    text-decoration: underline;
+    font-weight: 600;
+    font-size: 1.01rem;
+    margin-top: 0;
+    margin-bottom: 0;
+    display: inline-block;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+.patient-card-footer .ver-ficha-link:hover {
+    color: var(--primary-hover);
+}
+
+/* Botón eliminar paciente */
+
+/* Responsive: columnas apiladas en pantallas pequeñas */
+@media (max-width: 760px) {
+    .patient-card-grid-body { grid-template-columns: 1fr; padding: 14px 10px 0 10px; }
+    .patient-card-header, .patient-card-footer { padding-left: 10px; padding-right: 10px; }
+    .patient-card { padding: 0; }
+}
+
+/* Ajustes de card-bg por tema para la tarjeta */
+body.theme-corporate { --card-bg: color-mix(in srgb, var(--panel-bg) 85%, #000 6%); }
+body.theme-minimalist { --card-bg: color-mix(in srgb, var(--panel-bg) 85%, #000 4%); }
+body.theme-dark { --card-bg: color-mix(in srgb, var(--panel-bg) 92%, #000 8%); --card-text-color: var(--text-color); }
+/* user-select: deshabilita selección de texto global, solo habilitada en campos de texto */
+/* === Impresión de Ficha de Paciente (A4, márgenes 2cm, B/N) === */
+@media print {
+    /* Configuración de página */
+    @page {
+        size: A4 portrait;
+        margin: 2cm;
+    }
+
+    html, body {
+        background: #fff !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        height: auto !important;
+        overflow: visible !important;
+    }
+
+    /* Ocultar header principal de la app (navbar) en impresión */
+    #navbar {
+        display: none !important;
+    }
+
+    /* Ocultar panel derecho, carga, admin y otros elementos no deseados */
+    #auditor-col-right,
+    #panel-carga,
+    #details-admin,
+    #lista-prestaciones,
+    #listado-resultados,
+    #panel-busqueda #search-form,
+    #panel-busqueda #info-busqueda-dni {
+        display: none !important;
+    }
+    /* En la col izquierda, mostrar solo la ficha */
+    #auditor-col-left > :not(#info-paciente) {
+        display: none !important;
+    }
+    /* Dentro de info-paciente, solo la patient-card */
+    #info-paciente > :not(.patient-card) {
+        display: none !important;
+    }
+
+    /* Ajustes de layout para ocupar el ancho dentro de los márgenes */
+    .container { padding: 0 !important; }
+    .panel { box-shadow: none !important; border: none !important; padding: 0 !important; }
+
+    /* Ficha: fondo gris MUY tenue, sin sombras, bordes sutiles, 100% ancho imprimible */
+    .patient-card {
+        width: 100% !important;
+        max-width: none !important;
+        margin: 0 auto !important;
+        background: #f9f9f9 !important; /* Gris muy tenue */
+        color: #000 !important;
+        box-shadow: none !important;
+        border-width: 1px !important;
+        border-style: solid !important;
+        border-color: #000 !important;
+        box-sizing: border-box !important;
+        page-break-inside: avoid !important;
+    }
+    .patient-card .label,
+    .patient-card .value,
+    .patient-card .patient-name,
+    .patient-card .patient-dni {
+        color: #000 !important;
+    }
+    /* Logo en escala de grises */
+    .patient-card-logo {
+        filter: grayscale(100%) contrast(110%);
+    }
+
+    /* Ocultar TODOS los botones/acciones dentro de la ficha */
+    .footer-actions-row,
+    .footer-print-delete,
+    .icon-btn-print-ficha,
+    #btn-eliminar-paciente,
+    .icon-btn-eliminar,
+    .icon-btn-prestacion,
+    .btn-eliminar,
+    .btn-reset-pass {
+        display: none !important;
+    }
+
+    /* Forzar trazos/íconos a B/N si quedara alguno */
+    .patient-card svg * {
+        stroke: #000 !important;
+        fill: #000 !important;
+    }
+
+    /* Pie de página requerido: "Santa Fe, [fecha actual]" */
+    .print-footer {
+        display: block !important;
+        position: fixed !important;
+        right: 2cm !important;   /* alineado con margen derecho de página */
+        bottom: 1.2cm !important;
+        font-style: italic !important;
+        font-size: 10pt !important;
+        color: #000 !important;
+        background: transparent !important;
+        border: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        width: auto !important;
+        z-index: 9999 !important;
+        box-shadow: none !important;
+        pointer-events: none !important;
+    }
+}
+/* Nota: Los encabezados/pies propios del navegador (URL, fecha, etc.) se controlan desde el diálogo de impresión del navegador. */
+/* --- Spinner para Botones --- */
+.btn-spinner {
+    display: inline-block;
+    width: 1.2rem; /* Tamaño del spinner */
+    height: 1.2rem;
+    border: 3px solid rgba(255, 255, 255, 0.4);
+    border-top-color: #ffffff; /* Color del spinner */
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    vertical-align: middle;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Estilo para botones de eliminar mientras cargan (usado en archivosPaciente.js y app.js) */
+.btn-remove-prestacion:disabled, 
+.btn-accion-tabla:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+</style>

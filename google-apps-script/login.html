@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Casos Complejos</title>
+    
+    <?!= include('style'); ?>
+
+</head>
+<body class="theme-corporate">
+    <div class="login-container">
+        <h2>Iniciar Sesión</h2>
+        
+        <form id="login-form">
+            <div class="form-group">
+                <label for="usuario">Usuario</label>
+                <input type="text" id="usuario" name="usuario" required autocomplete="username">
+            </div>
+            <div class="form-group">
+                <label for="contrasena">Contraseña</label>
+                <input type="password" id="contrasena" name="contrasena" required autocomplete="current-password">
+            </div>
+            
+            <div id="message-area" class="message-area" style="display: none;"></div>
+
+            <button type="submit" id="btn-login">Ingresar</button>
+        </form>
+        
+    </div>
+
+    <script>
+        document.getElementById("login-form").addEventListener("submit", function(event) {
+            event.preventDefault();
+            
+            console.log('Formulario de login enviado');
+            
+            var form = this;
+            var btn = document.getElementById("btn-login");
+            var msg = document.getElementById("message-area");
+
+            // Deshabilitar botón y mostrar "cargando"
+            btn.disabled = true;
+            btn.innerHTML = '<span class="btn-spinner"></span> Cargando...';
+            msg.style.display = 'none';
+
+            // Convertir datos del formulario a un objeto simple
+            var formData = {
+                usuario: form.usuario.value,
+                contrasena: form.contrasena.value
+            };
+            
+            console.log('Intentando login con usuario:', formData.usuario);
+
+            // Llamar a la función 'iniciarSesion' en Código.gs
+            google.script.run
+                .withSuccessHandler(onLoginSuccess)
+                .withFailureHandler(onLoginFailure)
+                .iniciarSesion(formData);
+        });
+
+        function onLoginSuccess(url) {
+            // Si el login es exitoso, redirigimos a la app principal
+            console.log('Login exitoso, redirigiendo a:', url);
+            window.location.href = url;
+        }
+
+        function onLoginFailure(error) {
+            console.error('Error en login:', error);
+            
+            var btn = document.getElementById("btn-login");
+            var msg = document.getElementById("message-area");
+
+            // Mostrar el error
+            msg.textContent = error.message;
+            msg.className = "message-area error";
+            msg.style.display = "block";
+
+            // Reactivar el botón
+            btn.disabled = false;
+            btn.innerHTML = 'Ingresar';
+        }
+    </script>
+</body>
+</html>

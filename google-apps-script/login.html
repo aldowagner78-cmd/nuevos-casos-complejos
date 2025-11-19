@@ -62,7 +62,7 @@
         function onLoginSuccess(url) {
             // Si el login es exitoso, redirigimos a la app principal
             console.log('Login exitoso, redirigiendo a:', url);
-            window.location.href = url;
+            window.top.location.href = url + '?t=' + new Date().getTime();
         }
 
         function onLoginFailure(error) {

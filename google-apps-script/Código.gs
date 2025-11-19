@@ -76,7 +76,7 @@ function getPrestacionesPorDNI(dni) {
   const ss = SpreadsheetApp.openByUrl(SS_URL);
   const ws = ss.getSheetByName(SHEET_PRESTACIONES);
   
-  if (!dni || dni.trim() === '') {
+  if (!dni || dni.toString().trim() === '') {
     Logger.log("⚠️ DNI vacío en getPrestacionesPorDNI");
     return [];
   }
@@ -442,7 +442,7 @@ function buscarPacientePorDNI(query) {
         
         // Estructura de columnas (sin edad, con Carpeta_Drive_ID)
         pacienteEncontrado = {
-          dni: pacientesData[i][0] || '',
+          dni: pacientesData[i][0] ? pacientesData[i][0].toString() : '',
           nombre: pacientesData[i][1] || '',
           sexo: pacientesData[i][2] || '',
           fecha_nacimiento: pacientesData[i][3] ? formatearFecha(pacientesData[i][3].toString()) : '',

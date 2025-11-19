@@ -441,7 +441,7 @@
             google.script.run
                 .withSuccessHandler(function(url) {
                     console.log('Sesión cerrada, redirigiendo a:', url);
-                    window.location.href = url;
+                    window.top.location.href = url + '?t=' + new Date().getTime();
                 })
                 .withFailureHandler(function(err) {
                     console.error('Error al cerrar sesión:', err);

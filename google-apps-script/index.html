@@ -453,10 +453,14 @@
 
         // --- INICIALIZACIÓN ---
         
+        // Variable global para almacenar el logo cargado desde Drive
+        let logoIaposBase64 = '';
+        
         // CORRECCIÓN 2: Cargar logo desde Drive
         google.script.run
             .withSuccessHandler(function(logoBase64) {
                 if (logoBase64) {
+                    logoIaposBase64 = logoBase64; // Guardar en variable global
                     // Actualizar todas las imágenes con clase patient-card-logo
                     const logoImgs = document.querySelectorAll('.patient-card-logo');
                     logoImgs.forEach(function(img) {
@@ -596,7 +600,9 @@
                     html += '<div class="patient-dni">' + formatDNI(paciente.dni) + '</div>';
                     html += '</div>';
                     html += '<div class="patient-card-logo-container">';
-                    html += '<img src="https://www.iapos.gob.ar/sites/default/files/logo_0.png" alt="Logo IAPOS" class="patient-card-logo" draggable="false" onerror="this.style.display=\'none\'" />';
+                    // Usar logo desde variable global (cargado desde Drive)
+                    const logoSrc = logoIaposBase64 || 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'; // Logo o pixel transparente
+                    html += '<img src="' + logoSrc + '" alt="Logo IAPOS" class="patient-card-logo" draggable="false" />';
                     html += '</div></div>';
                     html += '<hr class="patient-card-header-separator" />';
                     html += '<div class="patient-card-grid-body">';

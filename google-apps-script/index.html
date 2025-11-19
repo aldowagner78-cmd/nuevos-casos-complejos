@@ -922,6 +922,246 @@
                 });
             });
         }
+        
+        /*
+        =================================================================
+        FASE 1.3: LÓGICA DE EDICIÓN DE PACIENTES
+        =================================================================
+        */
+        
+        // Búsqueda para editar paciente (con debounce)
+        const inputBuscarEditar = document.getElementById('input-buscar-editar');
+        const listadoPacientesEditar = document.getElementById('listado-pacientes-editar');
+        const formEditarContainer = document.getElementById('form-editar-paciente-container');
+        let searchTimeoutEditar;
+        let ultimaBusquedaEditar = '';
+        
+        if (inputBuscarEditar) {
+            inputBuscarEditar.addEventListener('input', function() {
+                const query = this.value.trim();
+                
+                clearTimeout(searchTimeoutEditar);
+                
+                // Limpiar si menos de 3 caracteres
+                if (query.length < 3) {
+                    listadoPacientesEditar.innerHTML = '';
+                    formEditarContainer.innerHTML = '';
+                    return;
+                }
+                
+                // No buscar si es la misma consulta
+                if (query === ultimaBusquedaEditar) return;
+                
+                // Debounce de 500ms
+                searchTimeoutEditar = setTimeout(function() {
+                    ultimaBusquedaEditar = query;
+                    listadoPacientesEditar.innerHTML = '<span class="btn-spinner"></span> Buscando...';
+                    formEditarContainer.innerHTML = '';
+                    
+                    google.script.run
+                        .withSuccessHandler(function(resultados) {
+                            if (!resultados || resultados.length === 0) {
+                                listadoPacientesEditar.innerHTML = '<p style="color:#888;font-style:italic;">No se encontraron resultados</p>';
+                                return;
+                            }
+                            
+                            let html = '';
+                            resultados.forEach(function(pac) {
+                                html += '<li><button type="button" onclick="cargarFormularioEdicion(\'' + pac.dni + '\')">' + pac.dni + ' - ' + pac.nombre + '</button></li>';
+                            });
+                            listadoPacientesEditar.innerHTML = html;
+                        })
+                        .withFailureHandler(function(err) {
+                            listadoPacientesEditar.innerHTML = '<p style="color:red;">Error: ' + err.message + '</p>';
+                        })
+                        .buscarPacientesPorFragmento(query);
+                }, 500);
+            });
+        }
+        
+        // Limpiar búsqueda de edición
+        const btnLimpiarEditar = document.getElementById('btn-limpiar-busqueda-editar');
+        if (btnLimpiarEditar) {
+            btnLimpiarEditar.addEventListener('click', function() {
+                inputBuscarEditar.value = '';
+                listadoPacientesEditar.innerHTML = '';
+                formEditarContainer.innerHTML = '';
+                ultimaBusquedaEditar = '';
+            });
+        }
+        
+        // Cargar datos del paciente en el formulario de edición
+        window.cargarFormularioEdicion = function(dni) {
+            formEditarContainer.innerHTML = '<span class="btn-spinner"></span> Cargando datos...';
+            listadoPacientesEditar.innerHTML = '';
+            
+            google.script.run
+                .withSuccessHandler(function(paciente) {
+                    if (!paciente) {
+                        formEditarContainer.innerHTML = '<p style="color:red;">Paciente no encontrado.</p>';
+                        return;
+                    }
+                    
+                    // Construir formulario con datos del paciente
+                    let html = '<form id="form-editar-paciente-datos" class="form-nuevopaciente">';
+                    html += '<h4>Editando: ' + paciente.nombre + ' (DNI: ' + paciente.dni + ')</h4>';
+                    
+                    // DNI (solo lectura)
+                    html += '<div class="grupo-edicion"><label>DNI:</label>';
+                    html += '<input type="text" name="dni" value="' + (paciente.dni || '') + '" readonly style="background:#f5f5f5;"></div>';
+                    
+                    // Nombre
+                    html += '<div class="grupo-edicion"><label>Nombre y Apellido: *</label>';
+                    html += '<input type="text" name="nombre" value="' + (paciente.nombre || '') + '" required></div>';
+                    
+                    // Sexo
+                    html += '<div class="grupo-edicion"><label>Sexo: *</label>';
+                    html += '<select name="sexo" required>';
+                    html += '<option value="">Seleccione...</option>';
+                    html += '<option value="Masculino" ' + (paciente.sexo === 'Masculino' ? 'selected' : '') + '>Masculino</option>';
+                    html += '<option value="Femenino" ' + (paciente.sexo === 'Femenino' ? 'selected' : '') + '>Femenino</option>';
+                    html += '<option value="Otro" ' + (paciente.sexo === 'Otro' ? 'selected' : '') + '>Otro</option>';
+                    html += '</select></div>';
+                    
+                    // Fecha de nacimiento (simple input date)
+                    const fechaNacValue = paciente.fecha_nacimiento ? paciente.fecha_nacimiento.split('/').reverse().join('-') : '';
+                    html += '<div class="grupo-edicion"><label>Fecha de Nacimiento: *</label>';
+                    html += '<input type="date" name="fecha_nacimiento" value="' + fechaNacValue + '" required></div>';
+                    
+                    // Condición
+                    html += '<div class="grupo-edicion"><label>Condición: *</label>';
+                    html += '<select name="condicion" required>';
+                    html += '<option value="">Seleccione...</option>';
+                    html += '<option value="Oncológica" ' + (paciente.condicion === 'Oncológica' ? 'selected' : '') + '>Oncológica</option>';
+                    html += '<option value="Trasplante Renal" ' + (paciente.condicion === 'Trasplante Renal' ? 'selected' : '') + '>Trasplante Renal</option>';
+                    html += '<option value="Trasplante Hepático" ' + (paciente.condicion === 'Trasplante Hepático' ? 'selected' : '') + '>Trasplante Hepático</option>';
+                    html += '<option value="HIV" ' + (paciente.condicion === 'HIV' ? 'selected' : '') + '>HIV</option>';
+                    html += '<option value="Otra" ' + (paciente.condicion === 'Otra' ? 'selected' : '') + '>Otra</option>';
+                    html += '</select></div>';
+                    
+                    // Teléfono
+                    html += '<div class="grupo-edicion"><label>Teléfono:</label>';
+                    html += '<input type="text" name="telefono" value="' + (paciente.telefono || '') + '"></div>';
+                    
+                    // Dirección
+                    html += '<div class="grupo-edicion"><label>Dirección:</label>';
+                    html += '<input type="text" name="direccion" value="' + (paciente.direccion || '') + '"></div>';
+                    
+                    // Localidad
+                    html += '<div class="grupo-edicion"><label>Localidad:</label>';
+                    html += '<input type="text" name="localidad" value="' + (paciente.localidad || '') + '"></div>';
+                    
+                    // Tipo de afiliado
+                    html += '<div class="grupo-edicion"><label>Tipo de Afiliado: *</label>';
+                    html += '<select name="tipo_afiliado" id="edit-tipo-afiliado" required>';
+                    html += '<option value="">Seleccione...</option>';
+                    html += '<option value="Titular" ' + (paciente.tipo_afiliado === 'Titular' ? 'selected' : '') + '>Titular</option>';
+                    html += '<option value="Adherente" ' + (paciente.tipo_afiliado === 'Adherente' ? 'selected' : '') + '>Adherente</option>';
+                    html += '</select></div>';
+                    
+                    // Campos de titular (mostrar/ocultar según tipo)
+                    const mostrarTitular = paciente.tipo_afiliado === 'Adherente';
+                    html += '<div id="edit-grupo-vinculo" class="grupo-edicion" style="display:' + (mostrarTitular ? 'block' : 'none') + ';">';
+                    html += '<label>Vínculo con Titular:</label>';
+                    html += '<input type="text" name="vinculo_titular" value="' + (paciente.vinculo_titular || '') + '"></div>';
+                    
+                    html += '<div id="edit-grupo-titular-nombre" class="grupo-edicion" style="display:' + (mostrarTitular ? 'block' : 'none') + ';">';
+                    html += '<label>Nombre del Titular:</label>';
+                    html += '<input type="text" name="titular_nombre" value="' + (paciente.titular_nombre || '') + '"></div>';
+                    
+                    html += '<div id="edit-grupo-titular-dni" class="grupo-edicion" style="display:' + (mostrarTitular ? 'block' : 'none') + ';">';
+                    html += '<label>DNI del Titular:</label>';
+                    html += '<input type="text" name="titular_dni" value="' + (paciente.titular_dni || '') + '"></div>';
+                    
+                    // Observaciones
+                    html += '<div class="grupo-edicion"><label>Observaciones:</label>';
+                    html += '<textarea name="observaciones" rows="4">' + (paciente.observaciones || '') + '</textarea></div>';
+                    
+                    // Botones
+                    html += '<div class="grupo-edicion" style="display:flex;gap:10px;">';
+                    html += '<button type="submit" class="btn-primary">💾 Guardar Cambios</button>';
+                    html += '<button type="button" id="btn-cancelar-edicion" class="btn-secondary">✖ Cancelar</button>';
+                    html += '</div>';
+                    
+                    html += '<div id="alerta-edicion" class="alert" style="display:none;"></div>';
+                    html += '</form>';
+                    
+                    formEditarContainer.innerHTML = html;
+                    
+                    // Event listener para cambiar tipo de afiliado
+                    document.getElementById('edit-tipo-afiliado').addEventListener('change', function() {
+                        const esTitular = this.value === 'Titular';
+                        document.getElementById('edit-grupo-vinculo').style.display = esTitular ? 'none' : 'block';
+                        document.getElementById('edit-grupo-titular-nombre').style.display = esTitular ? 'none' : 'block';
+                        document.getElementById('edit-grupo-titular-dni').style.display = esTitular ? 'none' : 'block';
+                        
+                        if (esTitular) {
+                            document.querySelector('[name="vinculo_titular"]').value = '';
+                            document.querySelector('[name="titular_nombre"]').value = '';
+                            document.querySelector('[name="titular_dni"]').value = '';
+                        }
+                    });
+                    
+                    // Event listener para cancelar
+                    document.getElementById('btn-cancelar-edicion').addEventListener('click', function() {
+                        if (confirm('¿Descartar cambios?')) {
+                            formEditarContainer.innerHTML = '';
+                            inputBuscarEditar.value = '';
+                        }
+                    });
+                    
+                    // Event listener para enviar formulario
+                    document.getElementById('form-editar-paciente-datos').addEventListener('submit', function(e) {
+                        e.preventDefault();
+                        
+                        const alerta = document.getElementById('alerta-edicion');
+                        alerta.innerHTML = '<span class="btn-spinner"></span> Guardando cambios...';
+                        alerta.style.display = 'block';
+                        
+                        const formData = {
+                            dni: this.dni.value.trim(),
+                            nombre: this.nombre.value.trim(),
+                            sexo: this.sexo.value,
+                            fecha_nacimiento: this.fecha_nacimiento.value,
+                            condicion: this.condicion.value,
+                            telefono: this.telefono.value.trim(),
+                            direccion: this.direccion.value.trim(),
+                            localidad: this.localidad.value.trim(),
+                            tipo_afiliado: this.tipo_afiliado.value,
+                            vinculo_titular: this.vinculo_titular.value.trim(),
+                            titular_nombre: this.titular_nombre.value.trim(),
+                            titular_dni: this.titular_dni.value.trim(),
+                            observaciones: this.observaciones.value.trim()
+                        };
+                        
+                        google.script.run
+                            .withSuccessHandler(function(resultado) {
+                                alert('✅ ' + resultado.message);
+                                formEditarContainer.innerHTML = '<p style="color:green;">Paciente actualizado correctamente.</p>';
+                                inputBuscarEditar.value = '';
+                            })
+                            .withFailureHandler(function(err) {
+                                alert('❌ Error: ' + err.message);
+                                alerta.innerHTML = '<p style="color:red;">Error: ' + err.message + '</p>';
+                            })
+                            .editarPaciente_web(formData);
+                    });
+                })
+                .withFailureHandler(function(err) {
+                    formEditarContainer.innerHTML = '<p style="color:red;">Error: ' + err.message + '</p>';
+                })
+                .buscarPacientePorDNI(dni);
+        };
+        
+        /*
+        =================================================================
+        FASE 1.4: LÓGICA DE BÚSQUEDA AVANZADA
+        =================================================================
+        */
+        
+        // TODO: Implementar formulario de búsqueda avanzada cuando esté listo el HTML
+        // La función busquedaAvanzada_web ya está lista en el backend
+        
     </script>
 </body>
 </html>

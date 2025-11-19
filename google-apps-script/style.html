@@ -2870,4 +2870,145 @@ body.theme-dark { --card-bg: color-mix(in srgb, var(--panel-bg) 92%, #000 8%); -
     opacity: 0.5;
     cursor: not-allowed;
 }
+
+/*
+=================================================================
+FASE 2.3: ESTILOS DE IMPRESIÓN @media print
+=================================================================
+*/
+
+@media print {
+    /* Ocultar elementos de navegación y controles */
+    header,
+    nav,
+    .btn-primary,
+    .btn-secondary,
+    button,
+    input[type="button"],
+    input[type="submit"],
+    .icon-btn-delete-paciente,
+    .icon-btn-delete-prestacion,
+    #btn-logout,
+    #btn-limpiar-busqueda,
+    #btn-limpiar-busqueda-editar,
+    #search-container,
+    #panel-carga,
+    #panel-editar-paciente,
+    #details-admin,
+    .btn-spinner,
+    .alert {
+        display: none !important;
+    }
+    
+    /* Configuración de página */
+    @page {
+        margin: 2cm;
+        size: A4 portrait;
+    }
+    
+    body {
+        background: white !important;
+        color: black !important;
+        font-size: 12pt;
+        line-height: 1.4;
+    }
+    
+    /* Ficha de paciente para imprimir */
+    .patient-card {
+        border: 2px solid #333 !important;
+        box-shadow: none !important;
+        page-break-inside: avoid;
+        margin-bottom: 20px;
+    }
+    
+    .patient-card-header {
+        background: #f0f0f0 !important;
+        color: black !important;
+        border-bottom: 2px solid #333 !important;
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
+    }
+    
+    .patient-card-logo {
+        max-width: 80px !important;
+    }
+    
+    .patient-card-title h2 {
+        font-size: 18pt !important;
+        color: black !important;
+    }
+    
+    .patient-card-grid-body {
+        display: block !important;
+    }
+    
+    .patient-card-grid-item {
+        page-break-inside: avoid;
+        margin-bottom: 10px;
+    }
+    
+    .patient-card-grid-item strong {
+        font-weight: bold;
+        color: black !important;
+    }
+    
+    /* Tabla de prestaciones */
+    .tabla-prestaciones {
+        border-collapse: collapse;
+        width: 100%;
+        margin-top: 15px;
+    }
+    
+    .tabla-prestaciones th,
+    .tabla-prestaciones td {
+        border: 1px solid #333 !important;
+        padding: 8px;
+        text-align: left;
+        color: black !important;
+    }
+    
+    .tabla-prestaciones th {
+        background: #e0e0e0 !important;
+        font-weight: bold;
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
+    }
+    
+    .tabla-prestaciones tr {
+        page-break-inside: avoid;
+    }
+    
+    /* Enlaces visibles en impresión */
+    a[href]:after {
+        content: " (" attr(href) ")";
+        font-size: 0.9em;
+        color: #666;
+    }
+    
+    .ver-ficha-link:after {
+        content: " (Ver en Drive)";
+    }
+    
+    /* Saltos de página */
+    .page-break-before {
+        page-break-before: always;
+    }
+    
+    .page-break-after {
+        page-break-after: always;
+    }
+    
+    /* Título del documento */
+    h1, h2, h3 {
+        page-break-after: avoid;
+        color: black !important;
+    }
+    
+    /* Info general */
+    #info-paciente {
+        width: 100%;
+    }
+}
+
+/* Fin de estilos */
 </style>

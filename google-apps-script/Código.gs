@@ -130,6 +130,48 @@ function invalidarCachePacientes() {
   Logger.log("🗑️ Caché de pacientes invalidado");
 }
 
+/**
+ * CORRECCIÓN 2: Obtiene el logo de IAPOS desde Drive y lo devuelve como Base64 data-uri
+ * @returns {string} Data URI del logo o cadena vacía si no se encuentra
+ */
+function obtenerLogoBase64() {
+  try {
+    // Buscar la carpeta de la aplicación
+    const appFolders = DriveApp.getFoldersByName(APP_FOLDER_NAME);
+    
+    if (!appFolders.hasNext()) {
+      Logger.log('⚠️ Carpeta de aplicación no encontrada');
+      return '';
+    }
+    
+    const appFolder = appFolders.next();
+    
+    // Buscar el archivo logo_iapos.png
+    const logoFiles = appFolder.getFilesByName('logo_iapos.png');
+    
+    if (!logoFiles.hasNext()) {
+      Logger.log('⚠️ Archivo logo_iapos.png no encontrado');
+      return '';
+    }
+    
+    const logoFile = logoFiles.next();
+    
+    // Leer el archivo como Blob y convertir a Base64
+    const blob = logoFile.getBlob();
+    const base64 = Utilities.base64Encode(blob.getBytes());
+    
+    // Construir data URI
+    const dataUri = 'data:image/png;base64,' + base64;
+    
+    Logger.log('✅ Logo cargado correctamente desde Drive');
+    return dataUri;
+    
+  } catch (e) {
+    Logger.log('❌ Error al obtener logo: ' + e.message);
+    return '';
+  }
+}
+
 // Diccionario de Efectores (para normalización)
 const EFECTORES_DICT = {
   "HIBA": {"variantes": ["HIBA","HIBA SA","HIBA HOSPITAL","HIBA CABA","HIBA HOSP","HIBA CENTRAL","HIBA HIBA","HEBA","HBU","htal italiano","htal. italiano","h. italiano","h.i","italiano","hospital italiano","h italiano","hosp. italiano","italiano sa","italiano hospital"], "tooltip": "Hospital Italiano de Buenos Aires"},
@@ -388,21 +430,34 @@ function formatearFecha(fechaStr) {
       return `${dia}/${mes}/${anio}`;
     }
     
+    // Convertir a string y limpiar timestamps/horas
+    let fechaString = fechaStr.toString();
+    
+    // Eliminar hora si existe (T00:00:00 o espacios con hora)
+    if (fechaString.includes('T')) {
+      fechaString = fechaString.split('T')[0];
+    }
+    if (fechaString.includes(' ')) {
+      fechaString = fechaString.split(' ')[0];
+    }
+    
     // Si es string con formato YYYY-MM-DD
-    const fechaString = fechaStr.toString();
     if (fechaString.includes('-')) {
       const partes = fechaString.split('-');
       if (partes.length === 3) {
         const y = partes[0];
-        const m = partes[1];
-        const d = partes[2];
+        const m = partes[1].padStart(2, '0');
+        const d = partes[2].padStart(2, '0');
         return `${d}/${m}/${y}`;
       }
     }
     
-    // Si ya está en formato DD/MM/YYYY
+    // Si ya está en formato DD/MM/YYYY, validar y retornar
     if (fechaString.includes('/')) {
-      return fechaString;
+      const partes = fechaString.split('/');
+      if (partes.length === 3) {
+        return `${partes[0].padStart(2, '0')}/${partes[1].padStart(2, '0')}/${partes[2]}`;
+      }
     }
     
     return fechaString;
@@ -473,6 +528,29 @@ function buscarPacientePorDNI(query) {
         prestador: p.prestador,
         prestacion: p.prestacion
       }));
+      
+      // CORRECCIÓN 3: Cargar archivos adjuntos con links directos
+      pacienteEncontrado.archivos_adjuntos = [];
+      
+      if (pacienteEncontrado.carpeta_drive_id) {
+        try {
+          const carpeta = DriveApp.getFolderById(pacienteEncontrado.carpeta_drive_id);
+          const archivos = carpeta.getFiles();
+          
+          while (archivos.hasNext()) {
+            const archivo = archivos.next();
+            pacienteEncontrado.archivos_adjuntos.push({
+              nombre: archivo.getName(),
+              url: archivo.getUrl(),
+              id: archivo.getId()
+            });
+          }
+          
+          Logger.log("📎 " + pacienteEncontrado.archivos_adjuntos.length + " archivos adjuntos cargados");
+        } catch (e) {
+          Logger.log("⚠️ Error al cargar archivos adjuntos: " + e.message);
+        }
+      }
       
       Logger.log("✅ Paciente encontrado: " + pacienteEncontrado.nombre);
       return pacienteEncontrado;
@@ -967,6 +1045,11 @@ function guardarPacienteConArchivos(formData, filesData) {
             fileObj.name
           );
           
+          // CORRECCIÓN 3: Renombrar archivo con formato "Apellido Nombre_archivo.ext"
+          const nombrePaciente = formData.nombre || 'PACIENTE';
+          const nuevoNombre = nombrePaciente.toUpperCase() + '_' + fileObj.name;
+          blob.setName(nuevoNombre);
+          
           // Crear archivo en Drive
           const archivo = carpeta.createFile(blob);
           archivosSubidos.push(archivo.getName());
@@ -1016,6 +1099,9 @@ function subirArchivosAPaciente(dni, filesData) {
     const row = cellResult.getRow();
     let carpetaDriveId = ws.getRange(row, 14).getValue();
     
+    // CORRECCIÓN 3: Obtener nombre del paciente para renombrado
+    const nombrePaciente = ws.getRange(row, 2).getValue() || 'PACIENTE';
+    
     // Si no existe carpeta, crearla
     if (!carpetaDriveId) {
       Logger.log("⚠️ Creando carpeta Drive para paciente...");
@@ -1043,6 +1129,10 @@ function subirArchivosAPaciente(dni, filesData) {
           fileObj.mimeType,
           fileObj.name
         );
+        
+        // CORRECCIÓN 3: Renombrar archivo
+        const nuevoNombre = nombrePaciente.toUpperCase() + '_' + fileObj.name;
+        blob.setName(nuevoNombre);
         
         const archivo = carpeta.createFile(blob);
         archivosSubidos.push({

@@ -451,7 +451,26 @@
                 .cerrarSesion();
         });
 
-        // --- Búsqueda de Paciente ---
+        // --- INICIALIZACIÓN ---
+        
+        // CORRECCIÓN 2: Cargar logo desde Drive
+        google.script.run
+            .withSuccessHandler(function(logoBase64) {
+                if (logoBase64) {
+                    // Actualizar todas las imágenes con clase patient-card-logo
+                    const logoImgs = document.querySelectorAll('.patient-card-logo');
+                    logoImgs.forEach(function(img) {
+                        img.src = logoBase64;
+                    });
+                    console.log('✅ Logo IAPOS cargado desde Drive');
+                } else {
+                    console.log('⚠️ Logo no encontrado, usando placeholder');
+                }
+            })
+            .withFailureHandler(function(err) {
+                console.error('❌ Error al cargar logo:', err);
+            })
+            .obtenerLogoBase64();
         
         // Búsqueda automática mientras se escribe (debounce de 500ms para reducir carga)
         let searchTimeout;
@@ -514,7 +533,23 @@
                     // Formatear valores
                     const nombreTitle = paciente.nombre || '(Sin nombre)';
                     const sexoText = paciente.sexo || '(Sin registrar)';
-                    const fechaNacText = paciente.fecha_nacimiento || '(Sin registrar)';
+                    
+                    // CORRECCIÓN 1: Limpiar fecha para mostrar solo DD/MM/YYYY
+                    let fechaNacText = paciente.fecha_nacimiento || '(Sin registrar)';
+                    if (fechaNacText !== '(Sin registrar)') {
+                        // Si tiene hora o timestamp, cortarla
+                        if (fechaNacText.includes('T')) {
+                            fechaNacText = fechaNacText.split('T')[0];
+                        }
+                        if (fechaNacText.includes(' ')) {
+                            fechaNacText = fechaNacText.split(' ')[0];
+                        }
+                        // Si tiene más de 10 caracteres, tomar solo los primeros 10
+                        if (fechaNacText.length > 10) {
+                            fechaNacText = fechaNacText.substring(0, 10);
+                        }
+                    }
+                    
                     const edadText = paciente.edad || '(Sin registrar)';
                     const condicionText = paciente.condicion || '(Sin registrar)';
                     const telefonoText = paciente.telefono || '(Sin registrar)';
@@ -534,10 +569,19 @@
                     const esTitular = paciente.tipo_afiliado && paciente.tipo_afiliado.toUpperCase() === 'TITULAR';
                     const mostrarTitular = !esTitular && titularText;
                     
-                    // Link a carpeta de Drive
-                    const fichaHtml = paciente.carpeta_drive_id 
-                        ? '<a href="https://drive.google.com/drive/folders/' + paciente.carpeta_drive_id + '" target="_blank" class="ver-ficha-link">Ver documentos en Drive</a>'
-                        : '<span style="opacity:0.5;">(Sin carpeta Drive)</span>';
+                    // CORRECCIÓN 3: Mostrar archivos adjuntos individuales con links directos
+                    let fichaHtml = '';
+                    if (paciente.archivos_adjuntos && paciente.archivos_adjuntos.length > 0) {
+                        fichaHtml = '<div style="margin-top:8px;"><strong>Archivos Adjuntos:</strong><ul style="margin:4px 0;padding-left:20px;">';
+                        paciente.archivos_adjuntos.forEach(function(archivo) {
+                            fichaHtml += '<li><a href="' + archivo.url + '" target="_blank" rel="noopener noreferrer">' + archivo.nombre + '</a></li>';
+                        });
+                        fichaHtml += '</ul></div>';
+                    } else if (paciente.carpeta_drive_id) {
+                        fichaHtml = '<a href="https://drive.google.com/drive/folders/' + paciente.carpeta_drive_id + '" target="_blank" rel="noopener noreferrer" class="ver-ficha-link">Ver carpeta Drive</a>';
+                    } else {
+                        fichaHtml = '<span style="opacity:0.5;">(Sin archivos adjuntos)</span>';
+                    }
                     
                     // Botón eliminar solo para administrativos
                     const userRolClass = document.body.className;

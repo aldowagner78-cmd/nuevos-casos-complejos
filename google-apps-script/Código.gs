@@ -136,21 +136,17 @@ function invalidarCachePacientes() {
  */
 function obtenerLogoBase64() {
   try {
-    // Buscar la carpeta de la aplicación
-    const appFolders = DriveApp.getFoldersByName(APP_FOLDER_NAME);
+    // ID de la carpeta donde está el logo (proporcionado por el usuario)
+    const LOGO_FOLDER_ID = '1CDn4ctX75gDPUNuc4fZRuq5YsECCU0i8';
     
-    if (!appFolders.hasNext()) {
-      Logger.log('⚠️ Carpeta de aplicación no encontrada');
-      return '';
-    }
-    
-    const appFolder = appFolders.next();
+    // Buscar directamente por ID de carpeta
+    const logoFolder = DriveApp.getFolderById(LOGO_FOLDER_ID);
     
     // Buscar el archivo logo_iapos.png
-    const logoFiles = appFolder.getFilesByName('logo_iapos.png');
+    const logoFiles = logoFolder.getFilesByName('logo_iapos.png');
     
     if (!logoFiles.hasNext()) {
-      Logger.log('⚠️ Archivo logo_iapos.png no encontrado');
+      Logger.log('⚠️ Archivo logo_iapos.png no encontrado en carpeta ' + LOGO_FOLDER_ID);
       return '';
     }
     
@@ -163,7 +159,7 @@ function obtenerLogoBase64() {
     // Construir data URI
     const dataUri = 'data:image/png;base64,' + base64;
     
-    Logger.log('✅ Logo cargado correctamente desde Drive');
+    Logger.log('✅ Logo cargado correctamente desde Drive (ID: ' + LOGO_FOLDER_ID + ')');
     return dataUri;
     
   } catch (e) {
@@ -496,12 +492,14 @@ function buscarPacientePorDNI(query) {
           (nombrePaciente && nombrePaciente.toLowerCase() === query.toString().trim().toLowerCase())) {
         
         // Estructura de columnas (sin edad, con Carpeta_Drive_ID)
+        const fechaRaw = pacientesData[i][3]; // Fecha sin formatear para calcularEdad
+        
         pacienteEncontrado = {
           dni: pacientesData[i][0] ? pacientesData[i][0].toString() : '',
           nombre: pacientesData[i][1] || '',
           sexo: pacientesData[i][2] || '',
-          fecha_nacimiento: pacientesData[i][3] ? formatearFecha(pacientesData[i][3].toString()) : '',
-          edad: pacientesData[i][3] ? calcularEdad(formatearFecha(pacientesData[i][3].toString())) : '',
+          fecha_nacimiento: fechaRaw ? formatearFecha(fechaRaw.toString()) : '',
+          edad: fechaRaw ? calcularEdad(fechaRaw) : '', // ⚠️ CRÍTICO: calcularEdad recibe fecha RAW
           condicion: pacientesData[i][4] || '',
           telefono: pacientesData[i][5] || '',
           direccion: pacientesData[i][6] || '',

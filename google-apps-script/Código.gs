@@ -786,6 +786,48 @@ function eliminarPrestacion(prestacionId) {
 }
 
 /**
+ * EDITAR PRESTACIÓN
+ * ⚡ OPTIMIZACIÓN: Usa TextFinder para ubicar el ID sin leer toda la hoja
+ */
+function editarPrestacion(prestacionId, datosActualizados) {
+  try {
+    const ss = SpreadsheetApp.openByUrl(SS_URL);
+    const wsPrestaciones = ss.getSheetByName(SHEET_PRESTACIONES);
+    
+    Logger.log("✏️ Editando prestación ID: " + prestacionId);
+    
+    // ⚡ OPTIMIZACIÓN: Buscar prestación usando TextFinder (O(1))
+    const finder = wsPrestaciones.getRange("A:A").createTextFinder(prestacionId.toString()).matchEntireCell(true);
+    const prestacionCell = finder.findNext();
+    
+    if (!prestacionCell) {
+      throw new Error('Prestación no encontrada');
+    }
+    
+    const fila = prestacionCell.getRow();
+    
+    // Actualizar campos (columnas: A=ID, B=DNI, C=Fecha, D=Prestador, E=Prestación)
+    if (datosActualizados.fecha !== undefined) {
+      wsPrestaciones.getRange(fila, 3).setValue(datosActualizados.fecha);
+    }
+    if (datosActualizados.prestador !== undefined) {
+      wsPrestaciones.getRange(fila, 4).setValue(datosActualizados.prestador);
+    }
+    if (datosActualizados.prestacion !== undefined) {
+      wsPrestaciones.getRange(fila, 5).setValue(datosActualizados.prestacion);
+    }
+    
+    Logger.log("✅ Prestación editada correctamente");
+    
+    return { message: 'Prestación actualizada correctamente.' };
+    
+  } catch (error) {
+    Logger.log('❌ Error en editarPrestacion: ' + error.message);
+    throw new Error('Error al editar prestación: ' + error.message);
+  }
+}
+
+/**
  * CARGAR NUEVA PRESTACIÓN (desde la App Web)
  */
 function guardarNuevaPrestacion_web(formData) {

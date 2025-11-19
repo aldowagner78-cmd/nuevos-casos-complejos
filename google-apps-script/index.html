@@ -701,6 +701,20 @@
             const userRolClass = document.body.className;
             const esAdmin = userRolClass.includes('rol-administrativo');
             
+            // Ordenar por fecha descendente (más nueva primero)
+            prestaciones.sort(function(a, b) {
+                const parseFecha = function(f) {
+                    if (!f) return 0;
+                    if (/^\d{4}-\d{2}-\d{2}/.test(f)) return new Date(f).getTime();
+                    if (/^\d{2}\/\d{2}\/\d{4}/.test(f)) {
+                        const parts = f.split('/');
+                        return new Date(parts[2] + '-' + parts[1] + '-' + parts[0]).getTime();
+                    }
+                    return new Date(f).getTime();
+                };
+                return parseFecha(b.fecha) - parseFecha(a.fecha);
+            });
+            
             let html = '<div class="prestaciones-header">';
             html += '<h3>Historial de Prestaciones</h3>';
             html += '<button class="icon-btn-print-ficha" id="btn-imprimir-historial" title="Imprimir historial" aria-label="Imprimir historial">';
@@ -711,18 +725,39 @@
             html += '</svg>';
             html += '</button>';
             html += '</div>';
-            html += '<table class="prestaciones-table" id="tabla-historial-prestaciones">';
-            html += '<thead><tr><th>Fecha</th><th>Prestador</th><th>Prestación</th>';
-            if (esAdmin) html += '<th>Acción</th>';
+            html += '<table class="prestaciones-table tabla-prestaciones" id="tabla-historial-prestaciones">';
+            html += '<thead><tr><th class="col-fecha">Fecha</th><th class="col-prestador">Prestador</th><th class="col-prestacion">Prestación</th>';
+            if (esAdmin) html += '<th class="col-acciones">Acciones</th>';
             html += '</tr></thead><tbody>';
             
             prestaciones.forEach(function(prest) {
-                html += '<tr>';
-                html += '<td>' + (prest.fecha || '') + '</td>';
-                html += '<td>' + (prest.prestador || '') + '</td>';
-                html += '<td>' + (prest.prestacion || '') + '</td>';
+                html += '<tr data-prestacion-id="' + prest.id + '">';
+                html += '<td class="col-fecha">' + (prest.fecha || '') + '</td>';
+                html += '<td class="col-prestador">' + (prest.prestador || '') + '</td>';
+                html += '<td class="col-prestacion">' + (prest.prestacion || '') + '</td>';
                 if (esAdmin) {
-                    html += '<td><button class="btn-delete-prestacion" data-id="' + prest.id + '" title="Eliminar prestación">🗑️</button></td>';
+                    html += '<td class="col-acciones"><div style="display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 5px;">';
+                    // Botón de editar (lápiz)
+                    html += '<button class="icon-btn-prestacion icon-btn-editar-prestacion" title="Editar prestación" data-id="' + prest.id + '">';
+                    html += '<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">';
+                    html += '<g transform="rotate(45 24 24)" stroke-linejoin="round" stroke-linecap="round">';
+                    html += '<path d="M 19 8 A 3 3 0 0 1 25 8 L 25 14 L 19 14 Z" fill="#f8b4c8" stroke="#e57373" stroke-width="1.5"/>';
+                    html += '<rect x="19" y="14" width="6" height="4" fill="#bdbdbd" stroke="#757575" stroke-width="1.2"/>';
+                    html += '<rect x="19" y="18" width="6" height="20" fill="#ffe082" stroke="#fbc02d" stroke-width="1.7"/>';
+                    html += '<polygon points="19,38 25,38 22,44" fill="#e0b97d" stroke="#b8860b" stroke-width="1.2"/>';
+                    html += '<polygon points="21,43 23,43 22,46" fill="#616161" stroke="#424242" stroke-width="0.9"/>';
+                    html += '</g></svg>';
+                    html += '</button>';
+                    // Botón de eliminar
+                    html += '<button class="icon-btn-prestacion icon-btn-eliminar-prestacion" title="Eliminar prestación" data-id="' + prest.id + '">';
+                    html += '<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#dc3545" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">';
+                    html += '<polyline points="3 6 5 6 21 6" />';
+                    html += '<path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" />';
+                    html += '<line x1="10" y1="11" x2="10" y2="17" />';
+                    html += '<line x1="14" y1="11" x2="14" y2="17" />';
+                    html += '</svg>';
+                    html += '</button>';
+                    html += '</div></td>';
                 }
                 html += '</tr>';
             });
@@ -741,9 +776,10 @@
             
             // Vincular botones de eliminar prestación
             if (esAdmin) {
-                const botonesEliminar = document.querySelectorAll('.btn-delete-prestacion');
+                const botonesEliminar = document.querySelectorAll('.icon-btn-eliminar-prestacion');
                 botonesEliminar.forEach(function(btn) {
-                    btn.addEventListener('click', function() {
+                    btn.addEventListener('click', function(e) {
+                        e.preventDefault();
                         const prestacionId = this.getAttribute('data-id');
                         mostrarModalAccion({
                             titulo: 'Eliminar Prestación',
@@ -767,6 +803,82 @@
                                     .eliminarPrestacion(prestacionId);
                             }
                         });
+                    });
+                });
+                
+                // Vincular botones de editar prestación (NUEVA FUNCIONALIDAD)
+                const botonesEditar = document.querySelectorAll('.icon-btn-editar-prestacion');
+                botonesEditar.forEach(function(btn) {
+                    btn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        const fila = btn.closest('tr');
+                        if (!fila) return;
+                        
+                        // Evitar múltiples ediciones simultáneas
+                        const editando = document.querySelector('.editando');
+                        if (editando && editando !== fila) return;
+                        
+                        fila.classList.add('editando');
+                        
+                        // Guardar valores originales
+                        const tds = fila.querySelectorAll('td');
+                        const original = Array.from(tds).map(td => td.innerHTML);
+                        const prestacionId = btn.getAttribute('data-id');
+                        
+                        // Obtener valores actuales
+                        const valFecha = tds[0].textContent.trim();
+                        const valPrestador = tds[1].textContent.trim();
+                        const valPrestacion = tds[2].textContent.trim();
+                        
+                        // Reemplazar por inputs
+                        tds[0].innerHTML = '<input type="date" value="' + formatearFechaInput(valFecha) + '" style="width: 98%;">';
+                        tds[1].innerHTML = '<input type="text" value="' + valPrestador + '" style="width: 98%;">';
+                        tds[2].innerHTML = '<input type="text" value="' + valPrestacion + '" style="width: 98%;">';
+                        
+                        // Acciones: guardar/cancelar
+                        if (tds[3]) {
+                            tds[3].innerHTML = '<div style="display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 5px;">' +
+                                '<button class="icon-btn-prestacion btn-guardar-prestacion" title="Guardar" style="color: #28a745;">' +
+                                '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#28a745" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' +
+                                '</button>' +
+                                '<button class="icon-btn-prestacion btn-cancelar-prestacion" title="Cancelar" style="color: #dc3545;">' +
+                                '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#dc3545" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
+                                '</button>' +
+                                '</div>';
+                                
+                            // Evento guardar
+                            tds[3].querySelector('.btn-guardar-prestacion').addEventListener('click', function() {
+                                const nuevaFecha = tds[0].querySelector('input').value;
+                                const nuevoPrestador = tds[1].querySelector('input').value.trim();
+                                const nuevaPrestacion = sentenceCase(tds[2].querySelector('input').value.trim());
+                                
+                                google.script.run
+                                    .withSuccessHandler(function(resultado) {
+                                        mostrarModalAviso({
+                                            titulo: 'Prestación Editada',
+                                            mensaje: resultado.message
+                                        });
+                                        seleccionarPaciente(pacienteDni);
+                                    })
+                                    .withFailureHandler(function(err) {
+                                        mostrarModalAviso({
+                                            titulo: 'Error',
+                                            mensaje: 'Error: ' + err.message
+                                        });
+                                    })
+                                    .editarPrestacion(prestacionId, {
+                                        fecha: nuevaFecha,
+                                        prestador: nuevoPrestador,
+                                        prestacion: nuevaPrestacion
+                                    });
+                            });
+                            
+                            // Evento cancelar
+                            tds[3].querySelector('.btn-cancelar-prestacion').addEventListener('click', function() {
+                                tds.forEach((td, i) => td.innerHTML = original[i]);
+                                fila.classList.remove('editando');
+                            });
+                        }
                     });
                 });
             }
@@ -1623,6 +1735,105 @@
             } catch (err) {
                 console.error('Error al imprimir historial:', err);
             }
+        }
+        
+        /**
+         * Normaliza texto a modo oración (primera letra mayúscula, respeta acrónimos y nombres propios)
+         */
+        function sentenceCase(value) {
+            if (value === null || value === undefined) return '';
+            let s = String(value).trim();
+            if (!s) return '';
+
+            // Dividir en oraciones (mantiene los delimitadores como ., !, ?)
+            const sentences = s.match(/[^.!?]+[.!?]*|[^.!?]+$/g) || [];
+
+            let finalResult = sentences.map(sentence => {
+                sentence = sentence.trim();
+                if (!sentence) return '';
+
+                // Procesar palabras de esta oración
+                const words = sentence.split(' ');
+                let processedWords = [];
+                
+                for (let i = 0; i < words.length; i++) {
+                    let word = words[i];
+                    if (!word) continue;
+
+                    // Quitar puntuación final para la evaluación
+                    let punctuation = '';
+                    const puncMatch = word.match(/[.,!?;:)]*$/);
+                    let coreWord = word;
+                    if (puncMatch) {
+                        punctuation = puncMatch[0];
+                        coreWord = word.substring(0, word.length - punctuation.length);
+                    }
+                    
+                    // Quitar prefijos (paréntesis, etc.)
+                    let prefix = '';
+                    const prefixMatch = coreWord.match(/^[(¿¡]*/);
+                     if (prefixMatch) {
+                        prefix = prefixMatch[0];
+                        coreWord = coreWord.substring(prefix.length);
+                    }
+                    
+                    if (!coreWord) {
+                         processedWords.push(word); // Era solo puntuación/prefijo
+                         continue;
+                    }
+
+                    // --- REGLAS DE EXCEPCIÓN ---
+                    // 1. Es TODO MAYÚSCULAS (y > 1 char)
+                    const isAllUpper = coreWord === coreWord.toUpperCase() && coreWord.length > 1;
+                    // 2. Es Nombre Propio (Empieza con Mayús, pero no es TODO MAYÚS)
+                    const isProper = coreWord.length > 0 && coreWord[0] === coreWord[0].toUpperCase() && !isAllUpper;
+                    // --- FIN REGLAS ---
+
+                    if (i === 0) {
+                        // Es la PRIMERA palabra de la oración
+                        if (isAllUpper) {
+                            processedWords.push(word); // Dejarla (ej: HIBA)
+                        } else {
+                            // Capitalizar primera letra, minúscula el resto
+                            processedWords.push(prefix + coreWord.charAt(0).toUpperCase() + coreWord.slice(1).toLowerCase() + punctuation);
+                        }
+                    } else {
+                        // Palabras SIGUIENTES
+                        if (isAllUpper) {
+                            processedWords.push(word); // Dejarla (ej: ... al HIBA)
+                        } else if (isProper) {
+                            // Respetar mayúscula inicial, minúscula el resto (ej: ... de Güemes)
+                            processedWords.push(prefix + coreWord.charAt(0).toUpperCase() + coreWord.slice(1).toLowerCase() + punctuation);
+                        } else {
+                            processedWords.push(prefix + coreWord.toLowerCase() + punctuation); // Normalizar
+                        }
+                    }
+                }
+                return processedWords.join(' ');
+            });
+
+            // Unir las oraciones. 
+            return finalResult.join(' ').replace(/(\s+)/g, ' '); // Limpieza final de espacios
+        }
+        
+        /**
+         * Convierte fecha DD/MM/AAAA a AAAA-MM-DD para input type="date"
+         */
+        function formatearFechaInput(fecha) {
+            if (!fecha || fecha.length < 8) return '';
+            const partes = fecha.split('/');
+            if (partes.length === 3) return partes[2] + '-' + partes[1].padStart(2,'0') + '-' + partes[0].padStart(2,'0');
+            return fecha;
+        }
+        
+        /**
+         * Convierte fecha AAAA-MM-DD a DD/MM/AAAA para visualización
+         */
+        function formatearFechaVisual(fecha) {
+            if (!fecha || fecha.length < 8) return '';
+            const partes = fecha.split('-');
+            if (partes.length === 3) return partes[2] + '/' + partes[1] + '/' + partes[0];
+            return fecha;
         }
         
     </script>

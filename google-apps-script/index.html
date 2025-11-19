@@ -445,7 +445,10 @@
                 })
                 .withFailureHandler(function(err) {
                     console.error('Error al cerrar sesión:', err);
-                    alert('Error al cerrar sesión: ' + err.message);
+                    mostrarModalAviso({
+                        titulo: 'Error',
+                        mensaje: 'Error al cerrar sesión: ' + err.message
+                    });
                     btn.disabled = false;
                 })
                 .cerrarSesion();
@@ -639,7 +642,7 @@
                     const btnImprimir = document.getElementById('btn-imprimir-ficha');
                     if (btnImprimir) {
                         btnImprimir.addEventListener('click', function() {
-                            window.print();
+                            printPatientCard();
                         });
                     }
                     
@@ -648,19 +651,30 @@
                         const btnEliminar = document.getElementById('btn-eliminar-paciente');
                         if (btnEliminar) {
                             btnEliminar.addEventListener('click', function() {
-                                if (confirm('¿Seguro que desea eliminar al paciente ' + paciente.nombre + '? Esta acción borrará todo su historial y no se puede deshacer.')) {
-                                    document.getElementById('info-paciente').innerHTML = '<span class="btn-spinner"></span> Eliminando paciente...';
-                                    google.script.run
-                                        .withSuccessHandler(function(resultado) {
-                                            alert(resultado.message);
-                                            document.getElementById('info-paciente').innerHTML = '<p style="color:green;">' + resultado.message + '</p>';
-                                        })
-                                        .withFailureHandler(function(err) {
-                                            alert('Error: ' + err.message);
-                                            document.getElementById('info-paciente').innerHTML = '<p style="color:red;">Error: ' + err.message + '</p>';
-                                        })
-                                        .eliminarPaciente(paciente.dni);
-                                }
+                                mostrarModalAccion({
+                                    titulo: 'Eliminar Paciente',
+                                    mensaje: '¿Seguro que desea eliminar al paciente ' + paciente.nombre + '? Esta acción borrará todo su historial y no se puede deshacer.',
+                                    textoAccion: 'Eliminar',
+                                    onConfirm: function() {
+                                        document.getElementById('info-paciente').innerHTML = '<span class="btn-spinner"></span> Eliminando paciente...';
+                                        google.script.run
+                                            .withSuccessHandler(function(resultado) {
+                                                mostrarModalAviso({
+                                                    titulo: 'Paciente Eliminado',
+                                                    mensaje: resultado.message
+                                                });
+                                                document.getElementById('info-paciente').innerHTML = '<p style="color:green;">' + resultado.message + '</p>';
+                                            })
+                                            .withFailureHandler(function(err) {
+                                                mostrarModalAviso({
+                                                    titulo: 'Error',
+                                                    mensaje: 'Error: ' + err.message
+                                                });
+                                                document.getElementById('info-paciente').innerHTML = '<p style="color:red;">Error: ' + err.message + '</p>';
+                                            })
+                                            .eliminarPaciente(paciente.dni);
+                                    }
+                                });
                             });
                         }
                     }
@@ -687,8 +701,17 @@
             const userRolClass = document.body.className;
             const esAdmin = userRolClass.includes('rol-administrativo');
             
-            let html = '<h3>Historial de Prestaciones</h3>';
-            html += '<table class="prestaciones-table">';
+            let html = '<div class="prestaciones-header">';
+            html += '<h3>Historial de Prestaciones</h3>';
+            html += '<button class="icon-btn-print-ficha" id="btn-imprimir-historial" title="Imprimir historial" aria-label="Imprimir historial">';
+            html += '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#1976d2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;">';
+            html += '<polyline points="6 9 6 2 18 2 18 9"></polyline>';
+            html += '<path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>';
+            html += '<rect x="6" y="14" width="12" height="8"></rect>';
+            html += '</svg>';
+            html += '</button>';
+            html += '</div>';
+            html += '<table class="prestaciones-table" id="tabla-historial-prestaciones">';
             html += '<thead><tr><th>Fecha</th><th>Prestador</th><th>Prestación</th>';
             if (esAdmin) html += '<th>Acción</th>';
             html += '</tr></thead><tbody>';
@@ -707,24 +730,43 @@
             html += '</tbody></table>';
             listaPrestacionesDiv.innerHTML = html;
             
+            // Vincular botón de imprimir historial
+            const btnImprimirHist = document.getElementById('btn-imprimir-historial');
+            if (btnImprimirHist) {
+                btnImprimirHist.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    printPrestacionesTable();
+                });
+            }
+            
             // Vincular botones de eliminar prestación
             if (esAdmin) {
                 const botonesEliminar = document.querySelectorAll('.btn-delete-prestacion');
                 botonesEliminar.forEach(function(btn) {
                     btn.addEventListener('click', function() {
                         const prestacionId = this.getAttribute('data-id');
-                        if (confirm('¿Está seguro de que desea eliminar esta prestación?')) {
-                            google.script.run
-                                .withSuccessHandler(function(resultado) {
-                                    alert(resultado.message);
-                                    // Recargar paciente para actualizar la lista
-                                    seleccionarPaciente(pacienteDni);
-                                })
-                                .withFailureHandler(function(err) {
-                                    alert('Error: ' + err.message);
-                                })
-                                .eliminarPrestacion(prestacionId);
-                        }
+                        mostrarModalAccion({
+                            titulo: 'Eliminar Prestación',
+                            mensaje: '¿Está seguro de que desea eliminar esta prestación?',
+                            textoAccion: 'Eliminar',
+                            onConfirm: function() {
+                                google.script.run
+                                    .withSuccessHandler(function(resultado) {
+                                        mostrarModalAviso({
+                                            titulo: 'Prestación Eliminada',
+                                            mensaje: resultado.message
+                                        });
+                                        seleccionarPaciente(pacienteDni);
+                                    })
+                                    .withFailureHandler(function(err) {
+                                        mostrarModalAviso({
+                                            titulo: 'Error',
+                                            mensaje: 'Error: ' + err.message
+                                        });
+                                    })
+                                    .eliminarPrestacion(prestacionId);
+                            }
+                        });
                     });
                 });
             }
@@ -861,23 +903,35 @@
                 
                 // Validación básica
                 if (!formData.dni || !formData.nombre) {
-                    alert('DNI y Nombre son obligatorios');
+                    mostrarModalAviso({
+                        titulo: 'Campos Incompletos',
+                        mensaje: 'DNI y Nombre son obligatorios'
+                    });
                     return;
                 }
                 
                 if (!formData.tipo_afiliado) {
-                    alert('Debe seleccionar el Tipo de Afiliado');
+                    mostrarModalAviso({
+                        titulo: 'Campos Incompletos',
+                        mensaje: 'Debe seleccionar el Tipo de Afiliado'
+                    });
                     return;
                 }
                 
                 // Validar campos de adherente
                 if (tipoAfiliado === 'Adherente') {
                     if (!formData.vinculo_titular) {
-                        alert('Debe especificar el Parentesco para un Adherente');
+                        mostrarModalAviso({
+                            titulo: 'Campos Incompletos',
+                            mensaje: 'Debe especificar el Parentesco para un Adherente'
+                        });
                         return;
                     }
                     if (!formData.titular_nombre || !formData.titular_dni) {
-                        alert('Debe completar Nombre y DNI del Titular para un Adherente');
+                        mostrarModalAviso({
+                            titulo: 'Campos Incompletos',
+                            mensaje: 'Debe completar Nombre y DNI del Titular para un Adherente'
+                        });
                         return;
                     }
                 }
@@ -914,13 +968,19 @@
                             if (filesProcessed === files.length) {
                                 google.script.run
                                     .withSuccessHandler(function(resultado) {
-                                        alert(resultado.message);
+                                        mostrarModalAviso({
+                                            titulo: 'Paciente Guardado',
+                                            mensaje: resultado.message
+                                        });
                                         formNuevoPaciente.reset();
                                         actualizarCamposTitular();
                                         alerta.style.display = 'none';
                                     })
                                     .withFailureHandler(function(err) {
-                                        alert('Error: ' + err.message);
+                                        mostrarModalAviso({
+                                            titulo: 'Error',
+                                            mensaje: 'Error: ' + err.message
+                                        });
                                         alerta.innerHTML = '<p style="color:red;">Error: ' + err.message + '</p>';
                                     })
                                     .guardarPacienteConArchivos(formData, filesData);
@@ -928,7 +988,10 @@
                         };
                         
                         reader.onerror = function() {
-                            alert('Error al leer el archivo: ' + file.name);
+                            mostrarModalAviso({
+                                titulo: 'Error',
+                                mensaje: 'Error al leer el archivo: ' + file.name
+                            });
                             alerta.style.display = 'none';
                         };
                         
@@ -938,13 +1001,19 @@
                     // Sin archivos: llamada normal
                     google.script.run
                         .withSuccessHandler(function(resultado) {
-                            alert(resultado.message);
+                            mostrarModalAviso({
+                                titulo: 'Paciente Guardado',
+                                mensaje: resultado.message
+                            });
                             formNuevoPaciente.reset();
                             actualizarCamposTitular();
                             alerta.style.display = 'none';
                         })
                         .withFailureHandler(function(err) {
-                            alert('Error: ' + err.message);
+                            mostrarModalAviso({
+                                titulo: 'Error',
+                                mensaje: 'Error: ' + err.message
+                            });
                             alerta.innerHTML = '<p style="color:red;">Error: ' + err.message + '</p>';
                         })
                         .guardarNuevoPaciente_web(formData);
@@ -978,7 +1047,10 @@
                 };
                 
                 if (!formData.paciente_dni || !formData.fecha || !formData.prestador || prestaciones.length === 0) {
-                    alert('Todos los campos son obligatorios');
+                    mostrarModalAviso({
+                        titulo: 'Campos Incompletos',
+                        mensaje: 'Todos los campos son obligatorios'
+                    });
                     return;
                 }
                 
@@ -988,12 +1060,18 @@
                 
                 google.script.run
                     .withSuccessHandler(function(resultado) {
-                        alert(resultado.message);
+                        mostrarModalAviso({
+                            titulo: 'Prestaciones Guardadas',
+                            mensaje: resultado.message
+                        });
                         formNuevaPrestacion.reset();
                         alerta.style.display = 'none';
                     })
                     .withFailureHandler(function(err) {
-                        alert('Error: ' + err.message);
+                        mostrarModalAviso({
+                            titulo: 'Error',
+                            mensaje: 'Error: ' + err.message
+                        });
                         alerta.innerHTML = '<p style="color:red;">Error: ' + err.message + '</p>';
                     })
                     .guardarNuevaPrestacion_web(formData);
@@ -1205,10 +1283,15 @@
                     
                     // Event listener para cancelar
                     document.getElementById('btn-cancelar-edicion').addEventListener('click', function() {
-                        if (confirm('¿Descartar cambios?')) {
-                            formEditarContainer.innerHTML = '';
-                            inputBuscarEditar.value = '';
-                        }
+                        mostrarModalAccion({
+                            titulo: 'Descartar Cambios',
+                            mensaje: '¿Descartar cambios?',
+                            textoAccion: 'Descartar',
+                            onConfirm: function() {
+                                formEditarContainer.innerHTML = '';
+                                inputBuscarEditar.value = '';
+                            }
+                        });
                     });
                     
                     // Event listener para enviar formulario
@@ -1321,6 +1404,224 @@
                     formBusquedaAvanzada.reset();
                     listadoResultadosAvanzada.innerHTML = '';
                 });
+            }
+        }
+        
+        // ============================================================================
+        // FUNCIONES HELPER: MODALES E IMPRESIÓN (PORTADO DESDE app.js)
+        // ============================================================================
+        
+        /**
+         * Modal informativo (éxito, error, mensajes simples)
+         * - Sin botones por defecto
+         * - Cierre automático a los 1.5 segundos
+         * - Cierre al hacer clic fuera
+         */
+        function mostrarModalAviso({titulo, mensaje, onClose}) {
+            const modal = document.getElementById('modal-aviso');
+            const tituloModal = document.getElementById('titulo-modal-aviso');
+            const textoModal = document.getElementById('texto-modal-aviso');
+            const botonesContainer = modal?.querySelector('.modal-botones-container');
+            
+            if (tituloModal) tituloModal.textContent = titulo || 'Aviso';
+            if (textoModal) textoModal.textContent = mensaje || '';
+            
+            // Ocultar botones
+            if (botonesContainer) botonesContainer.style.display = 'none';
+            
+            if (modal) {
+                modal.style.display = 'flex';
+                
+                // Cierre automático a los 1.5 segundos
+                const timeoutId = setTimeout(() => {
+                    modal.style.display = 'none';
+                    if (typeof onClose === 'function') onClose();
+                }, 1500);
+                
+                // Permitir cerrar al hacer clic fuera
+                function cerrarModalClickFuera(e) {
+                    if (e.target === modal) {
+                        clearTimeout(timeoutId);
+                        modal.style.display = 'none';
+                        if (typeof onClose === 'function') onClose();
+                        document.removeEventListener('mousedown', cerrarModalClickFuera);
+                    }
+                }
+                document.addEventListener('mousedown', cerrarModalClickFuera);
+            }
+        }
+        
+        /**
+         * Modal de acción crítica (eliminar, sobrescribir, etc.)
+         * - Dos botones: Aceptar/Eliminar y Cancelar
+         */
+        function mostrarModalAccion({titulo, mensaje, textoAccion, onConfirm}) {
+            const modal = document.getElementById('modal-confirmar-eliminar');
+            const tituloModal = document.getElementById('titulo-modal-eliminar');
+            const textoModal = document.getElementById('texto-modal-eliminar');
+            const btnAceptar = document.getElementById('btn-confirmar-eliminar-aceptar');
+            const btnCancelar = document.getElementById('btn-confirmar-eliminar-cancelar');
+            
+            if (tituloModal) tituloModal.textContent = titulo || 'Confirmar Acción';
+            if (textoModal) textoModal.textContent = mensaje || '¿Está seguro de que desea realizar esta acción?';
+            if (btnAceptar) btnAceptar.textContent = textoAccion || 'Aceptar';
+            
+            modal.style.display = 'flex';
+            
+            btnAceptar.onclick = null;
+            btnCancelar.onclick = null;
+            
+            btnCancelar.onclick = () => { 
+                modal.style.display = 'none'; 
+            };
+            
+            btnAceptar.onclick = () => {
+                modal.style.display = 'none';
+                if (typeof onConfirm === 'function') onConfirm();
+            };
+        }
+        
+        /**
+         * Imprime únicamente la ficha del paciente en A4 vertical, márgenes 2cm, B/N,
+         * sin otros elementos y con pie "Santa Fe, [fecha actual]" alineado a la derecha.
+         * Usa el diálogo nativo del navegador (vista previa incluida).
+         */
+        function printPatientCard() {
+            try {
+                const card = document.querySelector('#info-paciente .patient-card');
+                if (!card) return;
+
+                // Crear/actualizar el pie de impresión con la fecha actual (formato largo en español)
+                const footerId = 'print-footer';
+                let footer = document.getElementById(footerId);
+                const fechaLarga = (() => {
+                    const meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+                    const d = new Date();
+                    return d.getDate() + ' de ' + meses[d.getMonth()] + ' de ' + d.getFullYear();
+                })();
+                if (!footer) {
+                    footer = document.createElement('div');
+                    footer.id = footerId;
+                    footer.className = 'print-footer';
+                    document.body.appendChild(footer);
+                }
+                footer.textContent = 'Santa Fe, ' + fechaLarga;
+
+                // Limpiar el pie tras imprimir
+                const cleanup = () => {
+                    const f = document.getElementById(footerId);
+                    if (f) f.remove();
+                    window.removeEventListener('afterprint', cleanup);
+                };
+                window.addEventListener('afterprint', cleanup);
+
+                // Abrir diálogo de impresión
+                window.print();
+
+                // Fallback por si afterprint no se dispara (Safari)
+                setTimeout(() => {
+                    const f = document.getElementById(footerId);
+                    if (f && typeof window.matchMedia === 'function' && !window.matchMedia('print').matches) {
+                        f.remove();
+                    }
+                }, 1000);
+            } catch (err) {
+                console.error('Error al preparar la impresión:', err);
+            }
+        }
+        
+        /**
+         * Imprime únicamente la tabla de historial de prestaciones en A4 vertical, márgenes 2cm, B/N,
+         * sin otros elementos y con pie "Santa Fe, [fecha actual]" alineado a la derecha.
+         */
+        function printPrestacionesTable() {
+            try {
+                const tabla = document.getElementById('tabla-historial-prestaciones');
+                if (!tabla) return;
+
+                // Obtener nombre y DNI del paciente desde la tarjeta
+                let nombre = '-';
+                let dni = '-';
+                const nombreEl = document.querySelector('#info-paciente .patient-name');
+                const dniEl = document.querySelector('#info-paciente .patient-dni');
+                if (nombreEl) nombre = nombreEl.textContent.trim();
+                if (dniEl) dni = dniEl.textContent.trim();
+
+                // Clonar la tabla a un contenedor dedicado de impresión
+                const PRINT_AREA_ID = 'print-area-historial';
+                let printArea = document.getElementById(PRINT_AREA_ID);
+                if (!printArea) {
+                    printArea = document.createElement('div');
+                    printArea.id = PRINT_AREA_ID;
+                    printArea.style.display = 'none';
+                    document.body.appendChild(printArea);
+                } else {
+                    printArea.innerHTML = '';
+                }
+
+                // Crear encabezado personalizado
+                const header = document.createElement('div');
+                header.className = 'print-historial-header';
+                header.innerHTML = '<div style="font-size:1.25em;font-weight:bold;margin-bottom:2px;">' + nombre + '</div>' +
+                                   '<div style="font-size:1.1em;">DNI: ' + dni + '</div>' +
+                                   '<hr style="margin:8px 0 16px 0;">';
+                printArea.appendChild(header);
+
+                // Clonar la tabla sin referencias
+                const tablaClon = tabla.cloneNode(true);
+                printArea.appendChild(tablaClon);
+
+                // Crear/actualizar pie de impresión con nombre, DNI y fecha
+                const FOOTER_ID = 'print-footer';
+                let footer = document.getElementById(FOOTER_ID);
+                const fechaLarga = (() => {
+                    const meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+                    const d = new Date();
+                    return d.getDate() + ' de ' + meses[d.getMonth()] + ' de ' + d.getFullYear();
+                })();
+                if (!footer) {
+                    footer = document.createElement('div');
+                    footer.id = FOOTER_ID;
+                    footer.className = 'print-footer';
+                    document.body.appendChild(footer);
+                }
+                footer.innerHTML = 'Santa Fe, ' + fechaLarga + ' — <span class="footer-nombre">' + nombre + '</span> — <span class="footer-dni">DNI: ' + dni + '</span>';
+
+                // Marcar modo de impresión de historial
+                document.body.classList.add('print-historial');
+
+                const cleanup = () => {
+                    document.body.classList.remove('print-historial');
+                    const area = document.getElementById(PRINT_AREA_ID);
+                    if (area) area.remove();
+                    const f = document.getElementById(FOOTER_ID);
+                    if (f) f.remove();
+                    window.removeEventListener('afterprint', cleanup);
+                    if (window.matchMedia) {
+                        const mq = window.matchMedia('print');
+                        if (mq && mq.removeEventListener) {
+                            try { mq.removeEventListener('change', onMediaChange); } catch(_) {}
+                        }
+                    }
+                };
+                const onMediaChange = (mql) => { if (!mql.matches) cleanup(); };
+
+                window.addEventListener('afterprint', cleanup);
+                if (window.matchMedia) {
+                    const mq = window.matchMedia('print');
+                    if (mq && mq.addEventListener) mq.addEventListener('change', onMediaChange);
+                }
+
+                // Abrir diálogo de impresión
+                window.print();
+
+                // Fallback por si afterprint no dispara (Safari)
+                setTimeout(() => {
+                    if (!document.body.classList.contains('print-historial')) return;
+                    cleanup();
+                }, 1500);
+            } catch (err) {
+                console.error('Error al imprimir historial:', err);
             }
         }
         

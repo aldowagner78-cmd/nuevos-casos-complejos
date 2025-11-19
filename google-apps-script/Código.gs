@@ -1043,9 +1043,9 @@ function guardarPacienteConArchivos(formData, filesData) {
             fileObj.name
           );
           
-          // CORRECCIÓN 3: Renombrar archivo con formato "Apellido Nombre_archivo.ext"
-          const nombrePaciente = formData.nombre || 'PACIENTE';
-          const nuevoNombre = nombrePaciente.toUpperCase() + '_' + fileObj.name;
+          // CORRECCIÓN 3: Renombrar archivo con formato "APELLIDOS NOMBRES_archivo.ext"
+          const nombreCompleto = (formData.nombre || 'PACIENTE').toUpperCase();
+          const nuevoNombre = nombreCompleto + '_' + fileObj.name;
           blob.setName(nuevoNombre);
           
           // Crear archivo en Drive
@@ -1128,8 +1128,9 @@ function subirArchivosAPaciente(dni, filesData) {
           fileObj.name
         );
         
-        // CORRECCIÓN 3: Renombrar archivo
-        const nuevoNombre = nombrePaciente.toUpperCase() + '_' + fileObj.name;
+        // CORRECCIÓN 3: Renombrar archivo con formato "APELLIDOS NOMBRES_archivo.ext"
+        const nombreCompleto = (nombrePaciente || 'PACIENTE').toUpperCase();
+        const nuevoNombre = nombreCompleto + '_' + fileObj.name;
         blob.setName(nuevoNombre);
         
         const archivo = carpeta.createFile(blob);

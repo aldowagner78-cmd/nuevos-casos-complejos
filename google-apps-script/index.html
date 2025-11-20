@@ -365,6 +365,17 @@
                                     </select>
                                 </div>
                             </template>
+                            <template id="tpl-archivo-adjunto">
+                                <div class="archivo-adjunto-item" style="display:flex; align-items:center; justify-content:space-between; padding:8px; border:1px solid #eee; margin-bottom:5px; border-radius:4px; background:#f9f9f9;">
+                                    <div style="display:flex; align-items:center; gap:8px; overflow:hidden;">
+                                        <span class="archivo-icono">📄</span>
+                                        <a href="#" target="_blank" class="archivo-nombre" style="text-decoration:none; color:#1976d2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:200px;">NombreArchivo.pdf</a>
+                                    </div>
+                                    <button type="button" class="btn-eliminar-archivo" style="background:none; border:none; color:#e53935; cursor:pointer; padding:4px;" title="Eliminar archivo">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                    </button>
+                                </div>
+                            </template>
                         </div>
                     </div>
                 </details>
@@ -1303,79 +1314,90 @@
                     html += '<h4>Editando: ' + paciente.nombre + ' (DNI: ' + paciente.dni + ')</h4>';
                     
                     // DNI (solo lectura)
-                    html += '<div class="grupo-edicion"><label>DNI:</label>';
-                    html += '<input type="text" name="dni" value="' + (paciente.dni || '') + '" readonly style="background:#f5f5f5;"></div>';
+                    html += '<div class="form-group"><label>DNI (No editable):</label>';
+                    html += '<input type="text" name="dni" value="' + (paciente.dni || '') + '" readonly style="background-color:var(--color-dni-bg); color:var(--color-dni-fg); user-select:none; pointer-events:none;"></div>';
                     
                     // Nombre
-                    html += '<div class="grupo-edicion"><label>Nombre y Apellido: *</label>';
+                    html += '<div class="form-group"><label>Apellido y Nombre: *</label>';
                     html += '<input type="text" name="nombre" value="' + (paciente.nombre || '') + '" required></div>';
                     
                     // Sexo
-                    html += '<div class="grupo-edicion"><label>Sexo: *</label>';
-                    html += '<select name="sexo" required>';
+                    html += '<div class="form-group"><label>Sexo: *</label>';
+                    html += '<select name="sexo" id="edit-sexo" required>';
                     html += '<option value="">Seleccione...</option>';
                     html += '<option value="Masculino" ' + (paciente.sexo === 'Masculino' ? 'selected' : '') + '>Masculino</option>';
                     html += '<option value="Femenino" ' + (paciente.sexo === 'Femenino' ? 'selected' : '') + '>Femenino</option>';
-                    html += '<option value="Otro" ' + (paciente.sexo === 'Otro' ? 'selected' : '') + '>Otro</option>';
+                    html += '<option value="Otro" ' + (paciente.sexo === 'Otro' ? 'selected' : '') + '>Otro / No declarar</option>';
                     html += '</select></div>';
                     
-                    // Fecha de nacimiento (simple input date)
-                    const fechaNacValue = paciente.fecha_nacimiento ? paciente.fecha_nacimiento.split('/').reverse().join('-') : '';
-                    html += '<div class="grupo-edicion"><label>Fecha de Nacimiento: *</label>';
-                    html += '<input type="date" name="fecha_nacimiento" value="' + fechaNacValue + '" required></div>';
+                    // Fecha de nacimiento (Dropdowns)
+                    html += '<div class="form-group"><label>Fecha de Nacimiento: *</label>';
+                    html += '<div id="edit-fecha-nacimiento-container"></div></div>';
                     
                     // Condición
-                    html += '<div class="grupo-edicion"><label>Condición: *</label>';
+                    html += '<div class="form-group"><label>Condición: *</label>';
                     html += '<select name="condicion" required>';
                     html += '<option value="">Seleccione...</option>';
-                    html += '<option value="Oncológica" ' + (paciente.condicion === 'Oncológica' ? 'selected' : '') + '>Oncológica</option>';
-                    html += '<option value="Trasplante Renal" ' + (paciente.condicion === 'Trasplante Renal' ? 'selected' : '') + '>Trasplante Renal</option>';
-                    html += '<option value="Trasplante Hepático" ' + (paciente.condicion === 'Trasplante Hepático' ? 'selected' : '') + '>Trasplante Hepático</option>';
-                    html += '<option value="HIV" ' + (paciente.condicion === 'HIV' ? 'selected' : '') + '>HIV</option>';
-                    html += '<option value="Otra" ' + (paciente.condicion === 'Otra' ? 'selected' : '') + '>Otra</option>';
+                    html += '<option value="RESIDENTE" ' + (paciente.condicion === 'RESIDENTE' ? 'selected' : '') + '>RESIDENTE</option>';
+                    html += '<option value="DERIVADO" ' + (paciente.condicion === 'DERIVADO' ? 'selected' : '') + '>DERIVADO</option>';
+                    html += '<option value="TRANSITO" ' + (paciente.condicion === 'TRANSITO' ? 'selected' : '') + '>TRANSITO</option>';
                     html += '</select></div>';
                     
                     // Teléfono
-                    html += '<div class="grupo-edicion"><label>Teléfono:</label>';
+                    html += '<div class="form-group"><label>Teléfono:</label>';
                     html += '<input type="text" name="telefono" value="' + (paciente.telefono || '') + '"></div>';
                     
                     // Dirección
-                    html += '<div class="grupo-edicion"><label>Dirección:</label>';
+                    html += '<div class="form-group"><label>Dirección:</label>';
                     html += '<input type="text" name="direccion" value="' + (paciente.direccion || '') + '"></div>';
                     
                     // Localidad
-                    html += '<div class="grupo-edicion"><label>Localidad:</label>';
-                    html += '<input type="text" name="localidad" value="' + (paciente.localidad || '') + '"></div>';
+                    html += '<div class="form-group"><label>Localidad:</label>';
+                    html += '<input type="text" name="localidad" value="' + (paciente.localidad || '') + '" list="localidades-list"></div>';
                     
                     // Tipo de afiliado
-                    html += '<div class="grupo-edicion"><label>Tipo de Afiliado: *</label>';
+                    html += '<div class="form-group"><label>Tipo de Afiliado: *</label>';
                     html += '<select name="tipo_afiliado" id="edit-tipo-afiliado" required>';
                     html += '<option value="">Seleccione...</option>';
-                    html += '<option value="Titular" ' + (paciente.tipo_afiliado === 'Titular' ? 'selected' : '') + '>Titular</option>';
-                    html += '<option value="Adherente" ' + (paciente.tipo_afiliado === 'Adherente' ? 'selected' : '') + '>Adherente</option>';
+                    html += '<option value="TITULAR" ' + (paciente.tipo_afiliado === 'TITULAR' ? 'selected' : '') + '>TITULAR</option>';
+                    html += '<option value="ADHERENTE" ' + (paciente.tipo_afiliado === 'ADHERENTE' ? 'selected' : '') + '>ADHERENTE</option>';
                     html += '</select></div>';
                     
-                    // Campos de titular (mostrar/ocultar según tipo)
-                    const mostrarTitular = paciente.tipo_afiliado === 'Adherente';
-                    html += '<div id="edit-grupo-vinculo" class="grupo-edicion" style="display:' + (mostrarTitular ? 'block' : 'none') + ';">';
-                    html += '<label>Vínculo con Titular:</label>';
-                    html += '<input type="text" name="vinculo_titular" value="' + (paciente.vinculo_titular || '') + '"></div>';
+                    // Campos de titular (Parentesco complejo)
+                    html += '<div id="edit-grupo-parentesco" class="form-group" style="display:none;">';
+                    html += '<label>Parentesco:</label>';
+                    html += '<select id="edit-vinculo-titular" name="vinculo_titular">';
+                    html += '<option value="" selected disabled hidden>Seleccione...</option>';
+                    html += '<option value="Hijo/a">Hijo/a</option>';
+                    html += '<option value="Nieto/a">Nieto/a</option>';
+                    html += '<option value="Cónyuge">Cónyuge</option>';
+                    html += '<option value="Esposo/a">Esposo/a</option>';
+                    html += '<option value="Otro">Otro (especificar)</option>';
+                    html += '</select>';
+                    html += '<input type="text" id="edit-vinculo-otro" name="vinculo_titular_otro" placeholder="Especificar parentesco" style="display:none; margin-top:8px;">';
+                    html += '</div>';
                     
-                    html += '<div id="edit-grupo-titular-nombre" class="grupo-edicion" style="display:' + (mostrarTitular ? 'block' : 'none') + ';">';
-                    html += '<label>Nombre del Titular:</label>';
+                    html += '<div id="edit-grupo-titular-nombre" class="form-group" style="display:none;">';
+                    html += '<label>Nombre y Apellido Titular:</label>';
                     html += '<input type="text" name="titular_nombre" value="' + (paciente.titular_nombre || '') + '"></div>';
                     
-                    html += '<div id="edit-grupo-titular-dni" class="grupo-edicion" style="display:' + (mostrarTitular ? 'block' : 'none') + ';">';
-                    html += '<label>DNI del Titular:</label>';
+                    html += '<div id="edit-grupo-titular-dni" class="form-group" style="display:none;">';
+                    html += '<label>DNI Titular:</label>';
                     html += '<input type="text" name="titular_dni" value="' + (paciente.titular_dni || '') + '"></div>';
                     
                     // Observaciones
-                    html += '<div class="grupo-edicion"><label>Observaciones:</label>';
+                    html += '<div class="form-group"><label>Observaciones:</label>';
                     html += '<textarea name="observaciones" rows="4">' + (paciente.observaciones || '') + '</textarea></div>';
                     
+                    // Archivos Adjuntos (Placeholder)
+                    html += '<div class="form-group">';
+                    html += '<label>Adjuntar archivos (máximo 5)</label>';
+                    html += '<div id="campos-archivos-adjuntos-editar"></div>';
+                    html += '</div>';
+                    
                     // Botones
-                    html += '<div class="grupo-edicion" style="display:flex;gap:10px;">';
-                    html += '<button type="submit" class="btn-primary">💾 Guardar Cambios</button>';
+                    html += '<div class="form-group" style="display:flex;gap:10px;">';
+                    html += '<button type="submit" class="btn-primary" id="btn-guardar-edicion">💾 Guardar Cambios</button>';
                     html += '<button type="button" id="btn-cancelar-edicion" class="btn-secondary">✖ Cancelar</button>';
                     html += '</div>';
                     
@@ -1384,19 +1406,62 @@
                     
                     formEditarContainer.innerHTML = html;
                     
-                    // Event listener para cambiar tipo de afiliado
-                    document.getElementById('edit-tipo-afiliado').addEventListener('change', function() {
-                        const esTitular = this.value === 'Titular';
-                        document.getElementById('edit-grupo-vinculo').style.display = esTitular ? 'none' : 'block';
-                        document.getElementById('edit-grupo-titular-nombre').style.display = esTitular ? 'none' : 'block';
-                        document.getElementById('edit-grupo-titular-dni').style.display = esTitular ? 'none' : 'block';
-                        
-                        if (esTitular) {
-                            document.querySelector('[name="vinculo_titular"]').value = '';
-                            document.querySelector('[name="titular_nombre"]').value = '';
-                            document.querySelector('[name="titular_dni"]').value = '';
+                    // --- INICIALIZACIÓN DE COMPONENTES ---
+                    
+                    // 1. Dropdowns de Fecha
+                    const tplFecha = document.getElementById('tpl-edit-fecha-nacimiento-dropdowns');
+                    const containerFecha = document.getElementById('edit-fecha-nacimiento-container');
+                    if (tplFecha && containerFecha) {
+                        const clone = tplFecha.content.cloneNode(true);
+                        containerFecha.appendChild(clone);
+                        // Poblar con la fecha del paciente
+                        const fechaNac = paciente.fecha_nacimiento || '';
+                        // Convertir DD/MM/YYYY a YYYY-MM-DD si es necesario para poblarDropdownFecha
+                        let fechaISO = fechaNac;
+                        if (fechaNac.includes('/')) {
+                            const parts = fechaNac.split('/');
+                            if (parts.length === 3) fechaISO = parts[2] + '-' + parts[1] + '-' + parts[0];
                         }
+                        poblarDropdownFecha('edit-fecha', fechaISO);
+                    }
+                    
+                    // 2. Lógica de Parentesco
+                    const editTipoAfiliado = document.getElementById('edit-tipo-afiliado');
+                    const editGrupoParentesco = document.getElementById('edit-grupo-parentesco');
+                    const editGrupoTitularNombre = document.getElementById('edit-grupo-titular-nombre');
+                    const editGrupoTitularDni = document.getElementById('edit-grupo-titular-dni');
+                    const editVinculoSelect = document.getElementById('edit-vinculo-titular');
+                    const editVinculoOtro = document.getElementById('edit-vinculo-otro');
+                    
+                    function toggleCamposTitularEdit() {
+                        const esTitular = editTipoAfiliado.value === 'TITULAR';
+                        editGrupoParentesco.style.display = esTitular ? 'none' : 'block';
+                        editGrupoTitularNombre.style.display = esTitular ? 'none' : 'block';
+                        editGrupoTitularDni.style.display = esTitular ? 'none' : 'block';
+                    }
+                    
+                    // Inicializar visibilidad
+                    toggleCamposTitularEdit();
+                    editTipoAfiliado.addEventListener('change', toggleCamposTitularEdit);
+                    
+                    // Inicializar valor de parentesco
+                    const rev = reverseParentesco((paciente.vinculo_titular || '').toString());
+                    if (rev.option === 'Otro') {
+                        editVinculoSelect.value = 'Otro';
+                        editVinculoOtro.style.display = 'block';
+                        editVinculoOtro.value = rev.other;
+                    } else {
+                        editVinculoSelect.value = rev.option;
+                        editVinculoOtro.style.display = 'none';
+                    }
+                    
+                    editVinculoSelect.addEventListener('change', function() {
+                        editVinculoOtro.style.display = (this.value === 'Otro') ? 'block' : 'none';
                     });
+                    
+                    // 3. Archivos Adjuntos
+                    inicializarArchivosAdjuntosEdicion(paciente.dni, 'campos-archivos-adjuntos-editar');
+                    inicializarArchivosAdjuntosEdicion(paciente.dni, 'campos-archivos-adjuntos-editar');
                     
                     // Event listener para cancelar
                     document.getElementById('btn-cancelar-edicion').addEventListener('click', function() {
@@ -1415,21 +1480,37 @@
                     document.getElementById('form-editar-paciente-datos').addEventListener('submit', function(e) {
                         e.preventDefault();
                         
+                        // Validar fecha completa
+                        const dia = document.getElementById('edit-fecha-dia').value;
+                        const mes = document.getElementById('edit-fecha-mes').value;
+                        const anio = document.getElementById('edit-fecha-anio').value;
+                        
+                        if (!dia || !mes || !anio) {
+                            alert('Por favor complete la fecha de nacimiento.');
+                            return;
+                        }
+                        
                         const alerta = document.getElementById('alerta-edicion');
                         alerta.innerHTML = '<span class="btn-spinner"></span> Guardando cambios...';
                         alerta.style.display = 'block';
                         
+                        // Calcular parentesco final
+                        const editVinculoVal = editVinculoSelect.value;
+                        const editVinculoOtroVal = editVinculoOtro.value;
+                        const editSexoVal = document.getElementById('edit-sexo').value;
+                        const parentescoFinal = computeStoredParentesco(editVinculoVal, editSexoVal, editVinculoOtroVal);
+                        
                         const formData = {
                             dni: this.dni.value.trim(),
                             nombre: this.nombre.value.trim(),
-                            sexo: this.sexo.value,
-                            fecha_nacimiento: this.fecha_nacimiento.value,
+                            sexo: editSexoVal,
+                            fecha_nacimiento: anio + '-' + mes + '-' + dia, // Enviar como YYYY-MM-DD
                             condicion: this.condicion.value,
                             telefono: this.telefono.value.trim(),
                             direccion: this.direccion.value.trim(),
                             localidad: this.localidad.value.trim(),
                             tipo_afiliado: this.tipo_afiliado.value,
-                            vinculo_titular: this.vinculo_titular.value.trim(),
+                            vinculo_titular: parentescoFinal,
                             titular_nombre: this.titular_nombre.value.trim(),
                             titular_dni: this.titular_dni.value.trim(),
                             observaciones: this.observaciones.value.trim()
@@ -1437,12 +1518,19 @@
                         
                         google.script.run
                             .withSuccessHandler(function(resultado) {
-                                alert('✅ ' + resultado.message);
-                                formEditarContainer.innerHTML = '<p style="color:green;">Paciente actualizado correctamente.</p>';
+                                mostrarModalAviso({
+                                    titulo: 'Paciente Actualizado',
+                                    mensaje: resultado.message
+                                });
+                                formEditarContainer.innerHTML = '';
                                 inputBuscarEditar.value = '';
+                                listadoPacientesEditar.innerHTML = '';
                             })
                             .withFailureHandler(function(err) {
-                                alert('❌ Error: ' + err.message);
+                                mostrarModalAviso({
+                                    titulo: 'Error',
+                                    mensaje: 'Error: ' + err.message
+                                });
                                 alerta.innerHTML = '<p style="color:red;">Error: ' + err.message + '</p>';
                             })
                             .editarPaciente_web(formData);
@@ -1454,687 +1542,142 @@
                 .buscarPacientePorDNI(dni);
         };
         
-        /*
-        =================================================================
-        FASE 1.4: LÓGICA DE BÚSQUEDA AVANZADA
-        =================================================================
-        */
-        
-        const formBusquedaAvanzada = document.getElementById('form-busqueda-avanzada');
-        const listadoResultadosAvanzada = document.getElementById('listado-resultados-avanzada');
-        const btnLimpiarBusquedaAvanzada = document.getElementById('btn-limpiar-busqueda-avanzada');
-        
-        if (formBusquedaAvanzada) {
-            // Listener para submit del formulario
-            formBusquedaAvanzada.addEventListener('submit', function(e) {
-                e.preventDefault();
-                
-                // Capturar valores de los filtros
-                const filtros = {
-                    afiliado: document.getElementById('adv-afiliado').value.trim(),
-                    localidad: document.getElementById('adv-localidad').value.trim(),
-                    condicion: document.getElementById('adv-condicion').value,
-                    tipo_afiliado: document.getElementById('adv-tipo-afiliado').value,
-                    prestador: document.getElementById('adv-prestador').value.trim(),
-                    anio: document.getElementById('adv-anio').value.trim()
-                };
-                
-                // Validar que al menos un filtro esté completo
-                const tieneAlgunFiltro = Object.values(filtros).some(function(val) {
-                    return val !== '';
-                });
-                
-                if (!tieneAlgunFiltro) {
-                    listadoResultadosAvanzada.innerHTML = '<p style="color:#888;font-style:italic;padding:10px;">Debe completar al menos un filtro para realizar la búsqueda.</p>';
-                    return;
-                }
-                
-                // Mostrar indicador de carga
-                listadoResultadosAvanzada.innerHTML = '<span class="btn-spinner"></span> Buscando...';
-                
-                // Llamar al backend
-                google.script.run
-                    .withSuccessHandler(function(resultados) {
-                        if (!resultados || resultados.length === 0) {
-                            listadoResultadosAvanzada.innerHTML = '<p style="color:#888;font-style:italic;padding:10px;">No se encontraron pacientes con los filtros especificados.</p>';
-                            return;
-                        }
-                        
-                        // Renderizar resultados (mismo formato que búsqueda simple)
-                        let html = '<ul class="listado-pacientes">';
-                        resultados.forEach(function(pac) {
-                            html += '<li><button type="button" onclick="seleccionarPaciente(\'' + pac.dni + '\')">' + pac.dni + ' - ' + pac.nombre + '</button></li>';
-                        });
-                        html += '</ul>';
-                        
-                        listadoResultadosAvanzada.innerHTML = html;
-                    })
-                    .withFailureHandler(function(err) {
-                        listadoResultadosAvanzada.innerHTML = '<p style="color:red;padding:10px;">Error: ' + err.message + '</p>';
-                    })
-                    .busquedaAvanzada_web(filtros);
-            });
-            
-            // Listener para botón Limpiar Filtros
-            if (btnLimpiarBusquedaAvanzada) {
-                btnLimpiarBusquedaAvanzada.addEventListener('click', function() {
-                    formBusquedaAvanzada.reset();
-                    listadoResultadosAvanzada.innerHTML = '';
-                });
-            }
-        }
-        
-        // ============================================================================
-        // FUNCIONES HELPER: MODALES E IMPRESIÓN (PORTADO DESDE app.js)
-        // ============================================================================
-        
         /**
-         * Modal informativo (éxito, error, mensajes simples)
-         * - Sin botones por defecto
-         * - Cierre automático a los 1.5 segundos
-         * - Cierre al hacer clic fuera
+         * Inicializa el gestor de archivos adjuntos en el formulario de edición
          */
-        function mostrarModalAviso({titulo, mensaje, onClose}) {
-            const modal = document.getElementById('modal-aviso');
-            const tituloModal = document.getElementById('titulo-modal-aviso');
-            const textoModal = document.getElementById('texto-modal-aviso');
-            const botonesContainer = modal?.querySelector('.modal-botones-container');
+        function inicializarArchivosAdjuntosEdicion(dni, containerId) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
             
-            if (tituloModal) tituloModal.textContent = titulo || 'Aviso';
-            if (textoModal) textoModal.textContent = mensaje || '';
+            container.innerHTML = '<span class="btn-spinner"></span> Cargando archivos...';
             
-            // Ocultar botones
-            if (botonesContainer) botonesContainer.style.display = 'none';
-            
-            if (modal) {
-                modal.style.display = 'flex';
+            // Función interna para renderizar la lista
+            function renderizarLista(archivos) {
+                let html = '<div class="lista-archivos-existentes" style="margin-bottom:10px;">';
                 
-                // Cierre automático a los 1.5 segundos
-                const timeoutId = setTimeout(() => {
-                    modal.style.display = 'none';
-                    if (typeof onClose === 'function') onClose();
-                }, 1500);
-                
-                // Permitir cerrar al hacer clic fuera
-                function cerrarModalClickFuera(e) {
-                    if (e.target === modal) {
-                        clearTimeout(timeoutId);
-                        modal.style.display = 'none';
-                        if (typeof onClose === 'function') onClose();
-                        document.removeEventListener('mousedown', cerrarModalClickFuera);
-                    }
-                }
-                document.addEventListener('mousedown', cerrarModalClickFuera);
-            }
-        }
-        
-        /**
-         * Modal de acción crítica (eliminar, sobrescribir, etc.)
-         * - Dos botones: Aceptar/Eliminar y Cancelar
-         */
-        function mostrarModalAccion({titulo, mensaje, textoAccion, onConfirm}) {
-            const modal = document.getElementById('modal-confirmar-eliminar');
-            const tituloModal = document.getElementById('titulo-modal-eliminar');
-            const textoModal = document.getElementById('texto-modal-eliminar');
-            const btnAceptar = document.getElementById('btn-confirmar-eliminar-aceptar');
-            const btnCancelar = document.getElementById('btn-confirmar-eliminar-cancelar');
-            
-            if (tituloModal) tituloModal.textContent = titulo || 'Confirmar Acción';
-            if (textoModal) textoModal.textContent = mensaje || '¿Está seguro de que desea realizar esta acción?';
-            if (btnAceptar) btnAceptar.textContent = textoAccion || 'Aceptar';
-            
-            modal.style.display = 'flex';
-            
-            btnAceptar.onclick = null;
-            btnCancelar.onclick = null;
-            
-            btnCancelar.onclick = () => { 
-                modal.style.display = 'none'; 
-            };
-            
-            btnAceptar.onclick = () => {
-                modal.style.display = 'none';
-                if (typeof onConfirm === 'function') onConfirm();
-            };
-        }
-        
-        /**
-         * Imprime únicamente la ficha del paciente en A4 vertical, márgenes 2cm, B/N,
-         * sin otros elementos y con pie "Santa Fe, [fecha actual]" alineado a la derecha.
-         * Usa el diálogo nativo del navegador (vista previa incluida).
-         */
-        function printPatientCard() {
-            try {
-                const card = document.querySelector('#info-paciente .patient-card');
-                if (!card) return;
-
-                // Crear/actualizar el pie de impresión con la fecha actual (formato largo en español)
-                const footerId = 'print-footer';
-                let footer = document.getElementById(footerId);
-                const fechaLarga = (() => {
-                    const meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
-                    const d = new Date();
-                    return d.getDate() + ' de ' + meses[d.getMonth()] + ' de ' + d.getFullYear();
-                })();
-                if (!footer) {
-                    footer = document.createElement('div');
-                    footer.id = footerId;
-                    footer.className = 'print-footer';
-                    document.body.appendChild(footer);
-                }
-                footer.textContent = 'Santa Fe, ' + fechaLarga;
-
-                // Limpiar el pie tras imprimir
-                const cleanup = () => {
-                    const f = document.getElementById(footerId);
-                    if (f) f.remove();
-                    window.removeEventListener('afterprint', cleanup);
-                };
-                window.addEventListener('afterprint', cleanup);
-
-                // Abrir diálogo de impresión
-                window.print();
-
-                // Fallback por si afterprint no se dispara (Safari)
-                setTimeout(() => {
-                    const f = document.getElementById(footerId);
-                    if (f && typeof window.matchMedia === 'function' && !window.matchMedia('print').matches) {
-                        f.remove();
-                    }
-                }, 1000);
-            } catch (err) {
-                console.error('Error al preparar la impresión:', err);
-            }
-        }
-        
-        /**
-         * Imprime únicamente la tabla de historial de prestaciones en A4 vertical, márgenes 2cm, B/N,
-         * sin otros elementos y con pie "Santa Fe, [fecha actual]" alineado a la derecha.
-         */
-        function printPrestacionesTable() {
-            try {
-                const tabla = document.getElementById('tabla-historial-prestaciones');
-                if (!tabla) return;
-
-                // Obtener nombre y DNI del paciente desde la tarjeta
-                let nombre = '-';
-                let dni = '-';
-                const nombreEl = document.querySelector('#info-paciente .patient-name');
-                const dniEl = document.querySelector('#info-paciente .patient-dni');
-                if (nombreEl) nombre = nombreEl.textContent.trim();
-                if (dniEl) dni = dniEl.textContent.trim();
-
-                // Clonar la tabla a un contenedor dedicado de impresión
-                const PRINT_AREA_ID = 'print-area-historial';
-                let printArea = document.getElementById(PRINT_AREA_ID);
-                if (!printArea) {
-                    printArea = document.createElement('div');
-                    printArea.id = PRINT_AREA_ID;
-                    printArea.style.display = 'none';
-                    document.body.appendChild(printArea);
+                if (archivos && archivos.length > 0) {
+                    html += '<p style="font-size:0.9em; color:#666; margin-bottom:5px;">Archivos actuales:</p>';
+                    // Usaremos el template para cada archivo
+                    // Pero como es string building inicial, lo haremos simple y luego vincularemos eventos
                 } else {
-                    printArea.innerHTML = '';
+                    html += '<p style="font-size:0.9em; color:#888; font-style:italic;">Sin archivos adjuntos.</p>';
                 }
-
-                // Crear encabezado personalizado
-                const header = document.createElement('div');
-                header.className = 'print-historial-header';
-                header.innerHTML = '<div style="font-size:1.25em;font-weight:bold;margin-bottom:2px;">' + nombre + '</div>' +
-                                   '<div style="font-size:1.1em;">DNI: ' + dni + '</div>' +
-                                   '<hr style="margin:8px 0 16px 0;">';
-                printArea.appendChild(header);
-
-                // Clonar la tabla sin referencias
-                const tablaClon = tabla.cloneNode(true);
-                printArea.appendChild(tablaClon);
-
-                // Crear/actualizar pie de impresión con nombre, DNI y fecha
-                const FOOTER_ID = 'print-footer';
-                let footer = document.getElementById(FOOTER_ID);
-                const fechaLarga = (() => {
-                    const meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
-                    const d = new Date();
-                    return d.getDate() + ' de ' + meses[d.getMonth()] + ' de ' + d.getFullYear();
-                })();
-                if (!footer) {
-                    footer = document.createElement('div');
-                    footer.id = FOOTER_ID;
-                    footer.className = 'print-footer';
-                    document.body.appendChild(footer);
-                }
-                footer.innerHTML = 'Santa Fe, ' + fechaLarga + ' — <span class="footer-nombre">' + nombre + '</span> — <span class="footer-dni">DNI: ' + dni + '</span>';
-
-                // Marcar modo de impresión de historial
-                document.body.classList.add('print-historial');
-
-                const cleanup = () => {
-                    document.body.classList.remove('print-historial');
-                    const area = document.getElementById(PRINT_AREA_ID);
-                    if (area) area.remove();
-                    const f = document.getElementById(FOOTER_ID);
-                    if (f) f.remove();
-                    window.removeEventListener('afterprint', cleanup);
-                    if (window.matchMedia) {
-                        const mq = window.matchMedia('print');
-                        if (mq && mq.removeEventListener) {
-                            try { mq.removeEventListener('change', onMediaChange); } catch(_) {}
-                        }
-                    }
-                };
-                const onMediaChange = (mql) => { if (!mql.matches) cleanup(); };
-
-                window.addEventListener('afterprint', cleanup);
-                if (window.matchMedia) {
-                    const mq = window.matchMedia('print');
-                    if (mq && mq.addEventListener) mq.addEventListener('change', onMediaChange);
-                }
-
-                // Abrir diálogo de impresión
-                window.print();
-
-                // Fallback por si afterprint no dispara (Safari)
-                setTimeout(() => {
-                    if (!document.body.classList.contains('print-historial')) return;
-                    cleanup();
-                }, 1500);
-            } catch (err) {
-                console.error('Error al imprimir historial:', err);
-            }
-        }
-        
-        /**
-         * Normaliza texto a modo oración (primera letra mayúscula, respeta acrónimos y nombres propios)
-         */
-        function sentenceCase(value) {
-            if (value === null || value === undefined) return '';
-            let s = String(value).trim();
-            if (!s) return '';
-
-            // Dividir en oraciones (mantiene los delimitadores como ., !, ?)
-            const sentences = s.match(/[^.!?]+[.!?]*|[^.!?]+$/g) || [];
-
-            let finalResult = sentences.map(sentence => {
-                sentence = sentence.trim();
-                if (!sentence) return '';
-
-                // Procesar palabras de esta oración
-                const words = sentence.split(' ');
-                let processedWords = [];
+                html += '</div>';
                 
-                for (let i = 0; i < words.length; i++) {
-                    let word = words[i];
-                    if (!word) continue;
-
-                    // Quitar puntuación final para la evaluación
-                    let punctuation = '';
-                    const puncMatch = word.match(/[.,!?;:)]*$/);
-                    let coreWord = word;
-                    if (puncMatch) {
-                        punctuation = puncMatch[0];
-                        coreWord = word.substring(0, word.length - punctuation.length);
-                    }
-                    
-                    // Quitar prefijos (paréntesis, etc.)
-                    let prefix = '';
-                    const prefixMatch = coreWord.match(/^[(¿¡]*/);
-                     if (prefixMatch) {
-                        prefix = prefixMatch[0];
-                        coreWord = coreWord.substring(prefix.length);
-                    }
-                    
-                    if (!coreWord) {
-                         processedWords.push(word); // Era solo puntuación/prefijo
-                         continue;
-                    }
-
-                    // --- REGLAS DE EXCEPCIÓN ---
-                    // 1. Es TODO MAYÚSCULAS (y > 1 char)
-                    const isAllUpper = coreWord === coreWord.toUpperCase() && coreWord.length > 1;
-                    // 2. Es Nombre Propio (Empieza con Mayús, pero no es TODO MAYÚS)
-                    const isProper = coreWord.length > 0 && coreWord[0] === coreWord[0].toUpperCase() && !isAllUpper;
-                    // --- FIN REGLAS ---
-
-                    if (i === 0) {
-                        // Es la PRIMERA palabra de la oración
-                        if (isAllUpper) {
-                            processedWords.push(word); // Dejarla (ej: HIBA)
-                        } else {
-                            // Capitalizar primera letra, minúscula el resto
-                            processedWords.push(prefix + coreWord.charAt(0).toUpperCase() + coreWord.slice(1).toLowerCase() + punctuation);
-                        }
-                    } else {
-                        // Palabras SIGUIENTES
-                        if (isAllUpper) {
-                            processedWords.push(word); // Dejarla (ej: ... al HIBA)
-                        } else if (isProper) {
-                            // Respetar mayúscula inicial, minúscula el resto (ej: ... de Güemes)
-                            processedWords.push(prefix + coreWord.charAt(0).toUpperCase() + coreWord.slice(1).toLowerCase() + punctuation);
-                        } else {
-                            processedWords.push(prefix + coreWord.toLowerCase() + punctuation); // Normalizar
-                        }
-                    }
-                }
-                return processedWords.join(' ');
-            });
-
-            // Unir las oraciones. 
-            return finalResult.join(' ').replace(/(\s+)/g, ' '); // Limpieza final de espacios
-        }
-        
-        /**
-         * Convierte fecha DD/MM/AAAA a AAAA-MM-DD para input type="date"
-         */
-        function formatearFechaInput(fecha) {
-            if (!fecha || fecha.length < 8) return '';
-            const partes = fecha.split('/');
-            if (partes.length === 3) return partes[2] + '-' + partes[1].padStart(2,'0') + '-' + partes[0].padStart(2,'0');
-            return fecha;
-        }
-        
-        /**
-         * Convierte fecha AAAA-MM-DD a DD/MM/AAAA para visualización
-         */
-        function formatearFechaVisual(fecha) {
-            if (!fecha || fecha.length < 8) return '';
-            const partes = fecha.split('-');
-            if (partes.length === 3) return partes[2] + '/' + partes[1] + '/' + partes[0];
-            return fecha;
-        }
-        
-        // ============================================================================
-        // FUNCIONES PARA DROPDOWNS DE FECHA Y PARENTESCO
-        // ============================================================================
-        
-        /**
-         * Mapa de parentescos según género
-         */
-        const PARENTESCO_MAP = {
-            'Hijo/a': { male: 'hijo', female: 'hija', neutral: 'hijo' },
-            'Nieto/a': { male: 'nieto', female: 'nieta', neutral: 'nieto' },
-            'Cónyuge': { male: 'conyuge', female: 'conyuge', neutral: 'conyuge' },
-            'Esposo/a': { male: 'esposo', female: 'esposa', neutral: 'esposo' }
-        };
-        
-        /**
-         * Calcula el parentesco a guardar basado en selección y sexo
-         */
-        function computeStoredParentesco(optionValue, sexo, otherText) {
-            if (!optionValue) return '';
-            if (optionValue === 'Otro') return (otherText || '').trim() || '';
-            const map = PARENTESCO_MAP[optionValue];
-            if (!map) return optionValue;
-            if (sexo === 'Femenino') return map.female;
-            return map.male;
-        }
-        
-        /**
-         * Convierte un valor almacenado de parentesco de vuelta a la opción del select
-         */
-        function reverseParentesco(storedValue) {
-            if (!storedValue) return { option: '', other: '' };
-            const val = storedValue.toLowerCase();
-            for (const key of Object.keys(PARENTESCO_MAP)) {
-                const m = PARENTESCO_MAP[key];
-                if (m.male === val || m.female === val || m.neutral === val) {
-                    return { option: key, other: '' };
-                }
-            }
-            return { option: 'Otro', other: storedValue };
-        }
-        
-        /**
-         * Puebla los dropdowns de fecha con opciones
-         */
-        function poblarDropdownFecha(idPrefijo, fechaISO) {
-            const diaSel = document.getElementById(idPrefijo + '-dia');
-            const mesSel = document.getElementById(idPrefijo + '-mes');
-            const anioSel = document.getElementById(idPrefijo + '-anio');
-            
-            if (!diaSel || !mesSel || !anioSel) return;
-            
-            // Poblar días (01-31)
-            const opcionesDia = Array.from({ length: 31 }, function(_, i) {
-                const valor = String(i + 1).padStart(2, '0');
-                return '<option value="' + valor + '">' + valor + '</option>';
-            }).join('');
-            diaSel.innerHTML = '<option value="" selected disabled hidden>Día</option>' + opcionesDia;
-            
-            // Poblar meses (01-12)
-            const opcionesMes = Array.from({ length: 12 }, function(_, i) {
-                const valor = String(i + 1).padStart(2, '0');
-                return '<option value="' + valor + '">' + valor + '</option>';
-            }).join('');
-            mesSel.innerHTML = '<option value="" selected disabled hidden>Mes</option>' + opcionesMes;
-            
-            // Poblar años (1900 hasta el año actual)
-            const anioActual = new Date().getFullYear();
-            const opcionesAnio = [];
-            for (let anio = 1900; anio <= anioActual; anio++) {
-                opcionesAnio.push('<option value="' + anio + '">' + anio + '</option>');
-            }
-            anioSel.innerHTML = '<option value="" selected disabled hidden>Año</option>' + opcionesAnio.join('');
-            
-            // Seleccionar valores si se pasa una fecha válida
-            if (fechaISO) {
-                // Manejar tanto formato YYYY-MM-DD como DD/MM/YYYY
-                let yyyy, mm, dd;
+                // Input para nuevos archivos
+                html += '<div class="nuevo-archivo-container" style="margin-top:10px; border-top:1px dashed #ccc; padding-top:10px;">';
+                html += '<label style="font-size:0.9em; display:block; margin-bottom:5px;">Subir nuevos archivos:</label>';
+                html += '<div style="display:flex; gap:5px;">';
+                html += '<input type="file" id="input-nuevo-archivo-edicion" multiple accept="image/*,.pdf,.doc,.docx,.xls,.xlsx" style="font-size:0.9em;">';
+                html += '<button type="button" id="btn-subir-archivo-edicion" class="btn-secondary" style="padding:4px 8px; font-size:0.85em;" disabled>Subir</button>';
+                html += '</div>';
+                html += '<div id="progreso-subida" style="font-size:0.85em; color:#666; margin-top:5px; display:none;">Subiendo...</div>';
+                html += '</div>';
                 
-                if (fechaISO.includes('-')) {
-                    // Formato YYYY-MM-DD
-                    const soloFecha = fechaISO.split('T')[0];
-                    const partes = soloFecha.split('-');
-                    yyyy = partes[0];
-                    mm = partes[1];
-                    dd = partes[2];
-                } else if (fechaISO.includes('/')) {
-                    // Formato DD/MM/YYYY
-                    const partes = fechaISO.split('/');
-                    dd = partes[0];
-                    mm = partes[1];
-                    yyyy = partes[2];
-                }
+                container.innerHTML = html;
                 
-                if (dd) diaSel.value = dd.padStart(2, '0');
-                if (mm) mesSel.value = mm.padStart(2, '0');
-                if (yyyy) anioSel.value = yyyy;
-            }
-            
-            enableManualNumericSelect(diaSel, { min: 1, max: 31, padLength: 2 });
-            enableManualNumericSelect(mesSel, { min: 1, max: 12, padLength: 2 });
-            enableManualNumericSelect(anioSel, { min: 1900, max: anioActual, padLength: 4, resetDelay: 1200 });
-        }
-        
-        /**
-         * Permite ingresar números manualmente en un select
-         */
-        function enableManualNumericSelect(select, config) {
-            if (!select || select.dataset.manualNumeric === 'true') return;
-            
-            select.addEventListener('input', function(event) {
-                const value = event.target.value;
-                if (!/^[0-9]+$/.test(value)) return;
+                // Renderizar items existentes usando el template
+                const listaContainer = container.querySelector('.lista-archivos-existentes');
+                const tpl = document.getElementById('tpl-archivo-adjunto');
                 
-                let numeric = parseInt(value, 10);
-                if (!isNaN(numeric) && numeric >= config.min && numeric <= config.max) {
-                    const formatted = String(numeric).padStart(config.padLength, '0');
-                    for (let i = 0; i < select.options.length; i++) {
-                        if (select.options[i].value === formatted) {
-                            select.selectedIndex = i;
-                            break;
-                        }
-                    }
-                }
-            });
-            
-            select.dataset.manualNumeric = 'true';
-        }
-        
-        // ============================================================================
-        // FUNCIONES DE ADMINISTRACIÓN DE USUARIOS
-        // ============================================================================
-        
-        /**
-         * Carga la lista de usuarios en el panel de administración
-         */
-        function cargarListaUsuariosAdmin() {
-            const listaUsuariosAdminDiv = document.getElementById('lista-usuarios-admin');
-            if (!listaUsuariosAdminDiv) return;
-            
-            listaUsuariosAdminDiv.innerHTML = '<span class="btn-spinner"></span> Cargando usuarios...';
-            
-            google.script.run
-                .withSuccessHandler(function(usuarios) {
-                    if (!usuarios || usuarios.length === 0) {
-                        listaUsuariosAdminDiv.innerHTML = '<p>No hay otros usuarios registrados.</p>';
-                        return;
-                    }
-                    
-                    let tablaHtml = '<table><thead><tr>';
-                    tablaHtml += '<th>Usuario</th>';
-                    tablaHtml += '<th>Rol</th>';
-                    tablaHtml += '<th>Acciones</th>';
-                    tablaHtml += '</tr></thead><tbody>';
-                    
-                    usuarios.forEach(function(u) {
-                        tablaHtml += '<tr data-usuario-fila="' + u.usuario + '">';
-                        tablaHtml += '<td>' + u.usuario + '</td>';
-                        tablaHtml += '<td>';
-                        tablaHtml += '<select class="select-rol" data-usuario="' + u.usuario + '">';
-                        tablaHtml += '<option value="administrativo"' + (u.rol === 'administrativo' ? ' selected' : '') + '>Administrativo</option>';
-                        tablaHtml += '<option value="auditor"' + (u.rol === 'auditor' ? ' selected' : '') + '>Auditor</option>';
-                        tablaHtml += '</select>';
-                        tablaHtml += '</td>';
-                        tablaHtml += '<td class="admin-actions">';
-                        tablaHtml += '<button class="btn-eliminar btn-reset-pass" data-usuario="' + u.usuario + '">Resetear Pass</button>';
-                        tablaHtml += '<button class="btn-eliminar btn-eliminar-usuario" data-usuario="' + u.usuario + '">Eliminar</button>';
-                        tablaHtml += '</td>';
-                        tablaHtml += '</tr>';
+                if (archivos && archivos.length > 0 && tpl) {
+                    archivos.forEach(archivo => {
+                        const clone = tpl.content.cloneNode(true);
+                        const link = clone.querySelector('.archivo-nombre');
+                        const btnEliminar = clone.querySelector('.btn-eliminar-archivo');
+                        
+                        link.textContent = archivo.nombre;
+                        link.href = archivo.url;
+                        
+                        btnEliminar.onclick = function() {
+                            if (confirm('¿Eliminar el archivo "' + archivo.nombre + '"?')) {
+                                const itemDiv = this.closest('.archivo-adjunto-item');
+                                itemDiv.style.opacity = '0.5';
+                                this.disabled = true;
+                                
+                                google.script.run
+                                    .withSuccessHandler(function() {
+                                        itemDiv.remove();
+                                        if (listaContainer.querySelectorAll('.archivo-adjunto-item').length === 0) {
+                                            listaContainer.innerHTML = '<p style="font-size:0.9em; color:#888; font-style:italic;">Sin archivos adjuntos.</p>';
+                                        }
+                                    })
+                                    .withFailureHandler(function(err) {
+                                        alert('Error al eliminar: ' + err.message);
+                                        itemDiv.style.opacity = '1';
+                                        this.disabled = false;
+                                    })
+                                    .eliminarArchivoAdjunto(archivo.id);
+                            }
+                        };
+                        
+                        listaContainer.appendChild(clone);
                     });
+                }
+                
+                // Lógica de subida
+                const inputFile = document.getElementById('input-nuevo-archivo-edicion');
+                const btnSubir = document.getElementById('btn-subir-archivo-edicion');
+                const progreso = document.getElementById('progreso-subida');
+                
+                inputFile.addEventListener('change', function() {
+                    btnSubir.disabled = this.files.length === 0;
+                });
+                
+                btnSubir.addEventListener('click', function() {
+                    const files = inputFile.files;
+                    if (files.length === 0) return;
                     
-                    tablaHtml += '</tbody></table>';
-                    listaUsuariosAdminDiv.innerHTML = tablaHtml;
-                })
-                .withFailureHandler(function(err) {
-                    listaUsuariosAdminDiv.innerHTML = '<p style="color: red;">Error al cargar usuarios: ' + err.message + '</p>';
-                })
-                .listarUsuarios();
-        }
-        
-        // Event listener delegado para el panel de administración
-        document.addEventListener('click', function(e) {
-            const target = e.target;
-            
-            // Botón Resetear Password
-            if (target.classList.contains('btn-reset-pass')) {
-                const usuario = target.getAttribute('data-usuario');
-                mostrarModalAccion({
-                    titulo: 'Resetear Contraseña',
-                    mensaje: '¿Seguro que desea resetear la contraseña de ' + usuario + '? La nueva contraseña será "111111".',
-                    textoAccion: 'Resetear',
-                    onConfirm: function() {
-                        resetearPasswordAdmin(usuario);
-                    }
+                    btnSubir.disabled = true;
+                    inputFile.disabled = true;
+                    progreso.style.display = 'block';
+                    progreso.textContent = 'Procesando archivos...';
+                    
+                    const filesData = [];
+                    let processed = 0;
+                    
+                    Array.from(files).forEach(file => {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            const base64 = e.target.result.split(',')[1];
+                            filesData.push({
+                                name: file.name,
+                                mimeType: file.type,
+                                data: base64
+                            });
+                            processed++;
+                            
+                            if (processed === files.length) {
+                                progreso.textContent = 'Subiendo a Drive...';
+                                google.script.run
+                                    .withSuccessHandler(function(nuevosArchivos) {
+                                        progreso.style.display = 'none';
+                                        inputFile.value = '';
+                                        inputFile.disabled = false;
+                                        // Recargar lista completa
+                                        inicializarArchivosAdjuntosEdicion(dni, containerId);
+                                    })
+                                    .withFailureHandler(function(err) {
+                                        progreso.textContent = 'Error: ' + err.message;
+                                        progreso.style.color = 'red';
+                                        btnSubir.disabled = false;
+                                        inputFile.disabled = false;
+                                    })
+                                    .subirArchivosPaciente(dni, filesData);
+                            }
+                        };
+                        reader.readAsDataURL(file);
+                    });
                 });
             }
             
-            // Botón Eliminar Usuario
-            if (target.classList.contains('btn-eliminar-usuario')) {
-                const usuario = target.getAttribute('data-usuario');
-                const fila = target.closest('tr');
-                mostrarModalAccion({
-                    titulo: 'Eliminar Usuario',
-                    mensaje: '¡ATENCIÓN! ¿Seguro que desea ELIMINAR PERMANENTEMENTE al usuario ' + usuario + '?',
-                    textoAccion: 'Eliminar',
-                    onConfirm: function() {
-                        eliminarUsuarioAdmin(usuario, fila);
-                    }
-                });
-            }
-        });
-        
-        // Event listener delegado para cambio de rol
-        document.addEventListener('change', function(e) {
-            const target = e.target;
-            
-            if (target.classList.contains('select-rol')) {
-                const usuario = target.getAttribute('data-usuario');
-                const nuevoRol = target.value;
-                mostrarModalAccion({
-                    titulo: 'Cambiar Rol',
-                    mensaje: '¿Seguro que desea cambiar el rol de ' + usuario + ' a ' + nuevoRol + '?',
-                    textoAccion: 'Cambiar',
-                    onConfirm: function() {
-                        cambiarRolAdmin(usuario, nuevoRol);
-                    }
-                });
-            }
-        });
-        
-        /**
-         * Resetea la contraseña de un usuario
-         */
-        function resetearPasswordAdmin(usuario) {
+            // Cargar archivos iniciales
             google.script.run
-                .withSuccessHandler(function(resultado) {
-                    mostrarModalAviso({
-                        titulo: 'Contraseña Reseteada',
-                        mensaje: resultado.message
-                    });
-                })
+                .withSuccessHandler(renderizarLista)
                 .withFailureHandler(function(err) {
-                    mostrarModalAviso({
-                        titulo: 'Error',
-                        mensaje: err.message
-                    });
+                    container.innerHTML = '<p style="color:red;">Error al cargar archivos: ' + err.message + '</p>';
                 })
-                .resetearPasswordUsuario(usuario);
-        }
-        
-        /**
-         * Elimina un usuario del sistema
-         */
-        function eliminarUsuarioAdmin(usuario, filaElement) {
-            google.script.run
-                .withSuccessHandler(function(resultado) {
-                    if (filaElement) filaElement.remove();
-                    mostrarModalAviso({
-                        titulo: 'Usuario Eliminado',
-                        mensaje: resultado.message
-                    });
-                })
-                .withFailureHandler(function(err) {
-                    mostrarModalAviso({
-                        titulo: 'Error',
-                        mensaje: 'Error: ' + err.message
-                    });
-                })
-                .eliminarUsuario(usuario);
-        }
-        
-        /**
-         * Cambia el rol de un usuario
-         */
-        function cambiarRolAdmin(usuario, nuevoRol) {
-            google.script.run
-                .withSuccessHandler(function(resultado) {
-                    mostrarModalAviso({
-                        titulo: 'Rol Actualizado',
-                        mensaje: resultado.message,
-                        onClose: function() {
-                            cargarListaUsuariosAdmin();
-                        }
-                    });
-                })
-                .withFailureHandler(function(err) {
-                    mostrarModalAviso({
-                        titulo: 'Error',
-                        mensaje: 'Error: ' + err.message,
-                        onClose: function() {
-                            cargarListaUsuariosAdmin();
-                        }
-                    });
-                })
-                .cambiarRolUsuario(usuario, nuevoRol);
+                .listarArchivosPaciente(dni);
         }
         
     </script>

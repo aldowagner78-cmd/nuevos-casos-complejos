@@ -1842,6 +1842,134 @@
         }
         
         // ============================================================================
+        // FUNCIONES PARA DROPDOWNS DE FECHA Y PARENTESCO
+        // ============================================================================
+        
+        /**
+         * Mapa de parentescos según género
+         */
+        const PARENTESCO_MAP = {
+            'Hijo/a': { male: 'hijo', female: 'hija', neutral: 'hijo' },
+            'Nieto/a': { male: 'nieto', female: 'nieta', neutral: 'nieto' },
+            'Cónyuge': { male: 'conyuge', female: 'conyuge', neutral: 'conyuge' },
+            'Esposo/a': { male: 'esposo', female: 'esposa', neutral: 'esposo' }
+        };
+        
+        /**
+         * Calcula el parentesco a guardar basado en selección y sexo
+         */
+        function computeStoredParentesco(optionValue, sexo, otherText) {
+            if (!optionValue) return '';
+            if (optionValue === 'Otro') return (otherText || '').trim() || '';
+            const map = PARENTESCO_MAP[optionValue];
+            if (!map) return optionValue;
+            if (sexo === 'Femenino') return map.female;
+            return map.male;
+        }
+        
+        /**
+         * Convierte un valor almacenado de parentesco de vuelta a la opción del select
+         */
+        function reverseParentesco(storedValue) {
+            if (!storedValue) return { option: '', other: '' };
+            const val = storedValue.toLowerCase();
+            for (const key of Object.keys(PARENTESCO_MAP)) {
+                const m = PARENTESCO_MAP[key];
+                if (m.male === val || m.female === val || m.neutral === val) {
+                    return { option: key, other: '' };
+                }
+            }
+            return { option: 'Otro', other: storedValue };
+        }
+        
+        /**
+         * Puebla los dropdowns de fecha con opciones
+         */
+        function poblarDropdownFecha(idPrefijo, fechaISO) {
+            const diaSel = document.getElementById(idPrefijo + '-dia');
+            const mesSel = document.getElementById(idPrefijo + '-mes');
+            const anioSel = document.getElementById(idPrefijo + '-anio');
+            
+            if (!diaSel || !mesSel || !anioSel) return;
+            
+            // Poblar días (01-31)
+            const opcionesDia = Array.from({ length: 31 }, function(_, i) {
+                const valor = String(i + 1).padStart(2, '0');
+                return '<option value="' + valor + '">' + valor + '</option>';
+            }).join('');
+            diaSel.innerHTML = '<option value="" selected disabled hidden>Día</option>' + opcionesDia;
+            
+            // Poblar meses (01-12)
+            const opcionesMes = Array.from({ length: 12 }, function(_, i) {
+                const valor = String(i + 1).padStart(2, '0');
+                return '<option value="' + valor + '">' + valor + '</option>';
+            }).join('');
+            mesSel.innerHTML = '<option value="" selected disabled hidden>Mes</option>' + opcionesMes;
+            
+            // Poblar años (1900 hasta el año actual)
+            const anioActual = new Date().getFullYear();
+            const opcionesAnio = [];
+            for (let anio = 1900; anio <= anioActual; anio++) {
+                opcionesAnio.push('<option value="' + anio + '">' + anio + '</option>');
+            }
+            anioSel.innerHTML = '<option value="" selected disabled hidden>Año</option>' + opcionesAnio.join('');
+            
+            // Seleccionar valores si se pasa una fecha válida
+            if (fechaISO) {
+                // Manejar tanto formato YYYY-MM-DD como DD/MM/YYYY
+                let yyyy, mm, dd;
+                
+                if (fechaISO.includes('-')) {
+                    // Formato YYYY-MM-DD
+                    const soloFecha = fechaISO.split('T')[0];
+                    const partes = soloFecha.split('-');
+                    yyyy = partes[0];
+                    mm = partes[1];
+                    dd = partes[2];
+                } else if (fechaISO.includes('/')) {
+                    // Formato DD/MM/YYYY
+                    const partes = fechaISO.split('/');
+                    dd = partes[0];
+                    mm = partes[1];
+                    yyyy = partes[2];
+                }
+                
+                if (dd) diaSel.value = dd.padStart(2, '0');
+                if (mm) mesSel.value = mm.padStart(2, '0');
+                if (yyyy) anioSel.value = yyyy;
+            }
+            
+            enableManualNumericSelect(diaSel, { min: 1, max: 31, padLength: 2 });
+            enableManualNumericSelect(mesSel, { min: 1, max: 12, padLength: 2 });
+            enableManualNumericSelect(anioSel, { min: 1900, max: anioActual, padLength: 4, resetDelay: 1200 });
+        }
+        
+        /**
+         * Permite ingresar números manualmente en un select
+         */
+        function enableManualNumericSelect(select, config) {
+            if (!select || select.dataset.manualNumeric === 'true') return;
+            
+            select.addEventListener('input', function(event) {
+                const value = event.target.value;
+                if (!/^[0-9]+$/.test(value)) return;
+                
+                let numeric = parseInt(value, 10);
+                if (!isNaN(numeric) && numeric >= config.min && numeric <= config.max) {
+                    const formatted = String(numeric).padStart(config.padLength, '0');
+                    for (let i = 0; i < select.options.length; i++) {
+                        if (select.options[i].value === formatted) {
+                            select.selectedIndex = i;
+                            break;
+                        }
+                    }
+                }
+            });
+            
+            select.dataset.manualNumeric = 'true';
+        }
+        
+        // ============================================================================
         // FUNCIONES DE ADMINISTRACIÓN DE USUARIOS
         // ============================================================================
         
